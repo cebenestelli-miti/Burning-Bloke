@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Event Now - What's Happening</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow-y: hidden;
+      overflow-x: hidden;
+      background: transparent;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 24px auto;
+      padding: 0 20px;
+      color: #333;
+      min-height: auto;
+    }
+
+    body::before {
+      content: none;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+    }
+    h2 {
+      text-align: center;
+      font-size: 2em;
+      margin: 50px 0 30px;
+      color: #fff;
+      border-bottom: 2px solid rgba(255,255,255,0.2);
+      padding-bottom: 10px;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.6);
+    }
+    #current {
+      background: rgba(230, 247, 255, 0.94);
+      border: 3px solid #1890ff;
+      border-radius: 12px;
+      padding: 40px 25px;
+      margin-bottom: 50px;
+      text-align: center;
+      font-size: 2.4em;
+      line-height: 1.4;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      backdrop-filter: blur(4px);
+    }
+    #time {
+      font-size: 1.6em;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #0050b3;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    #status strong {
+      color: #d4380d;
+      display: block;
+      margin: 12px 0 8px;
+    }
+    #next-info {
+      font-size: 0.825em;
+      color: #d46b08;
+      font-weight: 500;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #91d5ff88;
+      display: none;
+    }
+    #next-info.visible {
+      display: block;
+    }
+    .day-section {
+      margin-bottom: 50px;
+      background: rgba(255, 255, 255, 0.97);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      backdrop-filter: blur(3px);
+    }
+    .day-header {
+      font-size: 1.6em;
+      font-weight: bold;
+      text-align: center;
+      background: #444;
+      color: white;
+      padding: 20px;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+    }
+    .day-header::after {
+      content: "▼";
+      position: absolute;
+      right: 30px;
+      font-size: 1.2em;
+      transition: transform 0.25s ease;
+    }
+    .day-header.expanded::after {
+      transform: rotate(180deg);
+    }
+    .day-header:hover { background: #555; }
+    table.day-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: inherit;
+    }
+    td {
+      border: 1px solid #ddd8;
+      padding: 16px 20px;
+      vertical-align: top;
+    }
+    tr:hover td { background: rgba(248,249,250,0.6); }
+    .time-col {
+      width: 160px;
+      font-weight: 600;
+      color: #444;
+      white-space: nowrap;
+    }
+    .activity-col {
+      line-height: 1.6;
+    }
+    .sat { background: rgba(255,242,230,0.9); }
+    .sun { background: rgba(240,230,255,0.9); }
+    .mon { background: rgba(230,255,251,0.9); }
+    .past { color: #888; opacity: 0.75; }
+    .current { background: rgba(217,243,190,0.9) !important; font-weight: bold; }
+
+    @media (max-width: 640px) {
+      body {
+        margin: 14px auto;
+        padding: 0 10px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+      h2 {
+        font-size: 1.6em;
+        margin: 30px 0 18px;
+      }
+      #current {
+        padding: 22px 14px;
+        font-size: 1.75em;
+        line-height: 1.3;
+      }
+      #time {
+        font-size: 1.35em;
+        line-height: 1.15;
+        margin-bottom: 14px;
+      }
+      #status strong {
+        margin: 8px 0 6px;
+      }
+      .day-header {
+        font-size: 1.25em;
+        padding: 14px 16px;
+      }
+      .day-header::after {
+        right: 14px;
+      }
+      td {
+        padding: 12px 10px;
+      }
+      .time-col {
+        width: 120px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h1>Event Live Status</h1>
+
+<div id="current">
+  <div id="time"></div>
+  <div id="status">Loading schedule...</div>
+  <div id="next-info"></div>
+</div>
+
+<h2>Full Schedule</h2>
+
+<script>
+const schedule = [{"dateIso": "2026-05-01", "dayLabel": "Friday 01 May", "className": "sat", "blocks": [{"start": "1900", "end": "2359", "activity": "Movies & Poker (Optional - BYO BBQ food, let us know)"}]}, {"dateIso": "2026-05-02", "dayLabel": "Saturday 02 May", "className": "sun", "blocks": [{"start": "0730", "end": "0815", "activity": "Morning Meditation Session"}, {"start": "0900", "end": "1100", "activity": "Swimming/Kayaking: Leslie Dam - Washpool Reserve"}, {"start": "1200", "end": "1230", "activity": "Lunch, Camp Setup"}, {"start": "1300", "end": "1700", "activity": "Group 1 - Shooting\nGroup 2 - Dirtbike & Rally Driving"}, {"start": "1700", "end": "1830", "activity": "Group 1 - Sauna & Icebath\nGroup 2 - Whatever you like"}, {"start": "1830", "end": "2359", "activity": "Dinner, Campfire & BYO Drinks etc"}]}, {"dateIso": "2026-05-03", "dayLabel": "Sunday 03 May", "className": "mon", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee"}, {"start": "1000", "end": "1100", "activity": "Touch Football Game"}, {"start": "1100", "end": "1300", "activity": "Lunch"}, {"start": "1300", "end": "1500", "activity": "Group 1 - Dirtbike & Rally Driving\nGroup 2 - Shooting"}, {"start": "1500", "end": "1830", "activity": "Group 1 - Games - Bocce, Finska\nGroup 2 - Sauna & Icebath"}, {"start": "1830", "end": "2200", "activity": "Dinner, Campfire & BYO Drinks etc"}]}, {"dateIso": "2026-05-04", "dayLabel": "Monday 04 May", "className": "sat", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee"}, {"start": "0930", "end": "1500", "activity": "Group 1 - Dirtbike & Rally Driving\nGroup 2 - Shooting"}, {"start": "1500", "end": "2359", "activity": "Time Capsule Burying"}]}];
+
+function todayIso() {
+  const n = new Date();
+  const y = n.getFullYear();
+  const m = String(n.getMonth() + 1).padStart(2, "0");
+  const d = String(n.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function toMinutes(timeStr) {
+  const hh = parseInt(timeStr.slice(0, 2), 10);
+  const mm = parseInt(timeStr.slice(2, 4), 10);
+  return hh * 60 + mm;
+}
+
+function fmtHm(timeStr) {
+  return timeStr.slice(0, 2) + ":" + timeStr.slice(2, 4);
+}
+
+function getCurrentLocal() {
+  const n = new Date();
+  const wd = n.toLocaleDateString("en-US", { weekday: "long" });
+  const hh = n.getHours();
+  const mm = n.getMinutes();
+  return {
+    dateIso: todayIso(),
+    dayOfWeek: wd,
+    currentMinutes: hh * 60 + mm,
+    timeStr: `${wd} ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`
+  };
+}
+
+function getCurrentAndNext() {
+  const { dateIso, currentMinutes } = getCurrentLocal();
+  const daySchedule = schedule.find(s => s.dateIso === dateIso);
+  if (!daySchedule) {
+    return { statusHtml: "No event scheduled today", nextText: "" };
+  }
+  let current = null;
+  let nextBlock = null;
+  for (const block of daySchedule.blocks) {
+    const s = toMinutes(block.start);
+    const e = toMinutes(block.end);
+    if (currentMinutes >= s && currentMinutes < e) {
+      current = block.activity;
+    }
+    if (currentMinutes < s && (!nextBlock || s < toMinutes(nextBlock.start))) {
+      nextBlock = block;
+    }
+  }
+  let statusHtml = current
+    ? `Currently:<br><strong>${current.replace(/\n/g, "<br>")}</strong>`
+    : "No activity right now";
+  let nextText = "";
+  if (nextBlock) {
+    nextText = `Next: ${nextBlock.activity.split("\n")[0].trim()} — ${fmtHm(nextBlock.start)}–${fmtHm(nextBlock.end)}`;
+  }
+  return { statusHtml, nextText };
+}
+
+function updateDisplay() {
+  const { timeStr } = getCurrentLocal();
+  const { statusHtml, nextText } = getCurrentAndNext();
+  document.getElementById("time").textContent = timeStr;
+  document.getElementById("status").innerHTML = statusHtml;
+  const nextEl = document.getElementById("next-info");
+  if (nextText) {
+    nextEl.textContent = nextText;
+    nextEl.classList.add("visible");
+  } else {
+    nextEl.classList.remove("visible");
+  }
+}
+
+function buildSchedule() {
+  const container = document.createElement("div");
+  container.id = "schedule-container";
+  const today = todayIso();
+  const { currentMinutes } = getCurrentLocal();
+  schedule.forEach(dayObj => {
+    const section = document.createElement("div");
+    section.className = "day-section";
+    const header = document.createElement("div");
+    header.className = "day-header expanded";
+    header.textContent = dayObj.dayLabel;
+    header.addEventListener("click", () => {
+      const table = section.querySelector("table");
+      const isHidden = table.style.display === "none";
+      table.style.display = isHidden ? "" : "none";
+      header.classList.toggle("expanded", isHidden);
+    });
+    section.appendChild(header);
+    const table = document.createElement("table");
+    table.className = "day-table";
+    const tbody = document.createElement("tbody");
+    dayObj.blocks.forEach(block => {
+      const row = document.createElement("tr");
+      row.classList.add(dayObj.className);
+      const sMin = toMinutes(block.start);
+      const eMin = toMinutes(block.end);
+      if (dayObj.dateIso === today) {
+        if (currentMinutes >= sMin && currentMinutes < eMin) row.classList.add("current");
+        else if (currentMinutes >= eMin) row.classList.add("past");
+      }
+      const act = block.activity.replace(/\n/g, "<br>");
+      row.innerHTML = `
+        <td class="time-col">${fmtHm(block.start)} – ${fmtHm(block.end)}</td>
+        <td class="activity-col">${act}</td>
+      `;
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    section.appendChild(table);
+    container.appendChild(section);
+  });
+  document.body.appendChild(container);
+}
+
+buildSchedule();
+updateDisplay();
+setInterval(updateDisplay, 60000);
+</script>
+</body>
+</html>

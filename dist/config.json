@@ -1,0 +1,176 @@
+{
+  "event_start": "2026-05-01",
+  "event_end": "2026-05-04",
+  "activity_types": [
+    "Bonfire & Burning Bloke Setup",
+    "Breakfast & Coffee",
+    "Dinner & Bloke Burning",
+    "Dinner, Campfire & BYO Drinks etc",
+    "Dinner, Campfire & Drinks",
+    "Dirtbike & Rally Driving",
+    "Free Time",
+    "Games - Bocce, Finska",
+    "Lunch",
+    "Lunch & Camp Setup",
+    "Lunch, Camp Setup",
+    "Meditation",
+    "Morning Meditation Session",
+    "Movies & Poker (Optional - BYO BBQ food, let us know)",
+    "Rally Driving",
+    "Sauna & Ice Bath",
+    "Sauna & Icebath",
+    "Shooting",
+    "Swimming & Kayaking",
+    "Swimming/Kayaking: Leslie Dam - Washpool Reserve",
+    "Time Capsule",
+    "Time Capsule Burying",
+    "Touch Football",
+    "Touch Football Game",
+    "Whatever you like"
+  ],
+  "qr_code_image": "",
+  "days": {
+    "2026-05-01": {
+      "activities": [
+        {
+          "start": "19:00",
+          "end": "23:59",
+          "name_g1": "Movies & Poker (Optional - BYO BBQ food, let us know)",
+          "name_g2": "Movies & Poker (Optional - BYO BBQ food, let us know)",
+          "image": ""
+        }
+      ]
+    },
+    "2026-05-02": {
+      "activities": [
+        {
+          "start": "07:30",
+          "end": "08:15",
+          "name_g1": "Morning Meditation Session",
+          "name_g2": "Morning Meditation Session",
+          "image": ""
+        },
+        {
+          "start": "09:00",
+          "end": "11:00",
+          "name_g1": "Swimming/Kayaking: Leslie Dam - Washpool Reserve",
+          "name_g2": "Swimming/Kayaking: Leslie Dam - Washpool Reserve",
+          "image": ""
+        },
+        {
+          "start": "12:00",
+          "end": "12:30",
+          "name_g1": "Lunch, Camp Setup",
+          "name_g2": "Lunch, Camp Setup",
+          "image": ""
+        },
+        {
+          "start": "13:00",
+          "end": "17:00",
+          "name_g1": "Shooting",
+          "name_g2": "Dirtbike & Rally Driving",
+          "image": ""
+        },
+        {
+          "start": "17:00",
+          "end": "18:30",
+          "name_g1": "Sauna & Icebath",
+          "name_g2": "Whatever you like",
+          "image": ""
+        },
+        {
+          "start": "18:30",
+          "end": "23:59",
+          "name_g1": "Dinner, Campfire & BYO Drinks etc",
+          "name_g2": "Dinner, Campfire & BYO Drinks etc",
+          "image": ""
+        }
+      ]
+    },
+    "2026-05-03": {
+      "activities": [
+        {
+          "start": "07:30",
+          "end": "08:30",
+          "name_g1": "Morning Meditation Session",
+          "name_g2": "Morning Meditation Session",
+          "image": ""
+        },
+        {
+          "start": "08:30",
+          "end": "09:30",
+          "name_g1": "Breakfast & Coffee",
+          "name_g2": "Breakfast & Coffee",
+          "image": ""
+        },
+        {
+          "start": "10:00",
+          "end": "11:00",
+          "name_g1": "Touch Football Game",
+          "name_g2": "Touch Football Game",
+          "image": ""
+        },
+        {
+          "start": "11:00",
+          "end": "13:00",
+          "name_g1": "Lunch",
+          "name_g2": "Lunch",
+          "image": ""
+        },
+        {
+          "start": "13:00",
+          "end": "15:00",
+          "name_g1": "Dirtbike & Rally Driving",
+          "name_g2": "Shooting",
+          "image": ""
+        },
+        {
+          "start": "15:00",
+          "end": "18:30",
+          "name_g1": "Games - Bocce, Finska",
+          "name_g2": "Sauna & Icebath",
+          "image": ""
+        },
+        {
+          "start": "18:30",
+          "end": "22:00",
+          "name_g1": "Dinner, Campfire & BYO Drinks etc",
+          "name_g2": "Dinner, Campfire & BYO Drinks etc",
+          "image": ""
+        }
+      ]
+    },
+    "2026-05-04": {
+      "activities": [
+        {
+          "start": "07:30",
+          "end": "08:30",
+          "name_g1": "Morning Meditation Session",
+          "name_g2": "Morning Meditation Session",
+          "image": ""
+        },
+        {
+          "start": "08:30",
+          "end": "09:30",
+          "name_g1": "Breakfast & Coffee",
+          "name_g2": "Breakfast & Coffee",
+          "image": ""
+        },
+        {
+          "start": "09:30",
+          "end": "15:00",
+          "name_g1": "Dirtbike & Rally Driving",
+          "name_g2": "Shooting",
+          "image": ""
+        },
+        {
+          "start": "15:00",
+          "end": "23:59",
+          "name_g1": "Time Capsule Burying",
+          "name_g2": "Time Capsule Burying",
+          "image": ""
+        }
+      ]
+    }
+  }
+}

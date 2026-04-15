@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Event Now - What's Happening</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px;
+      color: #333;
+      background: linear-gradient(rgba(0,0,0,0.05), rgba(0,0,0,0.05)),
+                  url('https://tinyurl.com/3yvu2c2u') center center / cover no-repeat fixed;
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+
+    /* Very light extra overlay – barely darkens the image */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.02);
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    h1 { 
+      text-align: center; 
+      margin-bottom: 20px; 
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+    }
+    h2 {
+      text-align: center;
+      font-size: 2em;
+      margin: 50px 0 30px;
+      color: #fff;
+      border-bottom: 2px solid rgba(255,255,255,0.2);
+      padding-bottom: 10px;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.6);
+    }
+    #current {
+      background: rgba(230, 247, 255, 0.94);
+      border: 3px solid #1890ff;
+      border-radius: 12px;
+      padding: 40px 25px;
+      margin-bottom: 50px;
+      text-align: center;
+      font-size: 2.4em;
+      line-height: 1.4;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      backdrop-filter: blur(4px);
+    }
+    #time {
+      font-size: 1.6em;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #0050b3;
+    }
+    #status strong {
+      color: #d4380d;
+      display: block;
+      margin: 12px 0 8px;
+    }
+    #next-info {
+      font-size: 0.825em;
+      color: #d46b08;
+      font-weight: 500;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #91d5ff88;
+      display: none;
+    }
+    #next-info.visible {
+      display: block;
+    }
+    .day-section {
+      margin-bottom: 50px;
+      background: rgba(255, 255, 255, 0.97);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      backdrop-filter: blur(3px);
+    }
+    .day-header {
+      font-size: 1.6em;
+      font-weight: bold;
+      text-align: center;
+      background: #444;
+      color: white;
+      padding: 20px;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+    }
+    .day-header::after {
+      content: "▼";
+      position: absolute;
+      right: 30px;
+      font-size: 1.2em;
+      transition: transform 0.25s ease;
+    }
+    .day-header.expanded::after {
+      transform: rotate(180deg);
+    }
+    .day-header:hover { background: #555; }
+    table.day-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: inherit;
+    }
+    td {
+      border: 1px solid #ddd8;
+      padding: 16px 20px;
+      vertical-align: top;
+    }
+    tr:hover td { background: rgba(248,249,250,0.6); }
+    .time-col {
+      width: 160px;
+      font-weight: 600;
+      color: #444;
+      white-space: nowrap;
+    }
+    .activity-col {
+      line-height: 1.6;
+    }
+    .sat { background: rgba(255,242,230,0.9); }
+    .sun { background: rgba(240,230,255,0.9); }
+    .mon { background: rgba(230,255,251,0.9); }
+    .past { color: #888; opacity: 0.75; }
+    .current { background: rgba(217,243,190,0.9) !important; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+<h1>Event Live Status</h1>
+
+<div id="current">
+  <div id="time"></div>
+  <div id="status">Loading schedule...</div>
+  <div id="next-info"></div>
+</div>
+
+<h2>Full Schedule</h2>
+
+<script>
+// Schedule data (unchanged)
+const schedule = [
+  { day: "Saturday", className: "sat", blocks: [
+    { start: "1000", end: "1200", activity: "Camp Setup" },
+    { start: "1200", end: "1300", activity: "Lunch" },
+    { start: "1300", end: "1700", activity: "Group 1 - Shooting\nGroup 2 - Rally Driving" },
+    { start: "1700", end: "1800", activity: "Sauna & Icebath" },
+    { start: "1800", end: "1900", activity: "Dinner" },
+    { start: "1900", end: "2100", activity: "Conspiracy Theories around the fire" }
+  ]},
+  { day: "Sunday", className: "sun", blocks: [
+    { start: "0800", end: "0830", activity: "Meditation" },
+    { start: "0830", end: "0930", activity: "Breakfast" },
+    { start: "0930", end: "1200", activity: "Group 1 - Rally Driving\nGroup 2 - Shooting" },
+    { start: "1200", end: "1300", activity: "Lunch" },
+    { start: "1300", end: "1700", activity: "Group 1 - Shooting\nGroup 2 - Rally Driving" },
+    { start: "1700", end: "1800", activity: "Sauna & Icebath" },
+    { start: "1800", end: "1900", activity: "Dinner" },
+    { start: "1900", end: "2000", activity: "Burning of the Bloke" }
+  ]},
+  { day: "Monday", className: "mon", blocks: [
+    { start: "0800", end: "0830", activity: "Meditation" },
+    { start: "0830", end: "0930", activity: "Breakfast" },
+    { start: "0930", end: "1200", activity: "Group 1 - Shooting\nGroup 2 - Rally Driving" },
+    { start: "1200", end: "1300", activity: "Lunch" },
+    { start: "1300", end: "1700", activity: "Unstructured" }
+  ]}
+];
+
+// Helpers
+function toMinutes(timeStr) {
+  const hh = parseInt(timeStr.slice(0,2), 10);
+  const mm = parseInt(timeStr.slice(2), 10);
+  return hh * 60 + mm;
+}
+
+function getCurrentAEST() {
+  // PREVIEW: Sunday 10:00 AEST – remove/comment for live use
+  return {
+    dayOfWeek: "Sunday",
+    currentMinutes: 10 * 60 + 0,
+    timeStr: "Sunday 10:00"
+  };
+
+  // Live version (uncomment when ready):
+  /*
+  const now = new Date();
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Australia/Brisbane",
+    weekday: "long", hour: "2-digit", minute: "2-digit", hour12: false
+  });
+  const parts = fmt.formatToParts(now);
+  const map = {};
+  parts.forEach(p => map[p.type] = p.value);
+  return {
+    dayOfWeek: map.weekday,
+    currentMinutes: parseInt(map.hour)*60 + parseInt(map.minute),
+    timeStr: `${map.weekday} \( {map.hour.padStart(2,'0')}: \){map.minute.padStart(2,'0')}`
+  };
+  */
+}
+
+function getCurrentAndNext() {
+  const { dayOfWeek, currentMinutes } = getCurrentAEST();
+  const daySchedule = schedule.find(s => s.day === dayOfWeek);
+  if (!daySchedule) {
+    return { statusHtml: "No event scheduled today", nextText: "" };
+  }
+  let current = null;
+  let nextBlock = null;
+  for (const block of daySchedule.blocks) {
+    const s = toMinutes(block.start);
+    const e = toMinutes(block.end);
+    if (currentMinutes >= s && currentMinutes < e) {
+      current = block.activity;
+    }
+    if (currentMinutes < s && (!nextBlock || s < toMinutes(nextBlock.start))) {
+      nextBlock = block;
+    }
+  }
+  let statusHtml = current
+    ? `Currently:<br><strong>${current.replace(/\n/g, '<br>')}</strong>`
+    : "No activity right now";
+  let nextText = "";
+  if (nextBlock) {
+    nextText = `Next: ${nextBlock.activity.split('\n')[0].trim()} - ${nextBlock.start} - ${nextBlock.end}`;
+  }
+  return { statusHtml, nextText };
+}
+
+function updateDisplay() {
+  const { timeStr } = getCurrentAEST();
+  const { statusHtml, nextText } = getCurrentAndNext();
+  document.getElementById("time").textContent = timeStr;
+  document.getElementById("status").innerHTML = statusHtml;
+  const nextEl = document.getElementById("next-info");
+  if (nextText) {
+    nextEl.textContent = nextText;
+    nextEl.classList.add("visible");
+  } else {
+    nextEl.classList.remove("visible");
+  }
+}
+
+function buildSchedule() {
+  const container = document.createElement("div");
+  container.id = "schedule-container";
+  const today = getCurrentAEST().dayOfWeek;
+  const { currentMinutes } = getCurrentAEST();
+  schedule.forEach(dayObj => {
+    const section = document.createElement("div");
+    section.className = "day-section";
+    const header = document.createElement("div");
+    header.className = "day-header expanded";
+    header.textContent = dayObj.day;
+    header.addEventListener("click", () => {
+      const table = section.querySelector("table");
+      const isHidden = table.style.display === "none";
+      table.style.display = isHidden ? "" : "none";
+      header.classList.toggle("expanded", isHidden);
+    });
+    section.appendChild(header);
+    const table = document.createElement("table");
+    table.className = "day-table";
+    const tbody = document.createElement("tbody");
+    dayObj.blocks.forEach(block => {
+      const row = document.createElement("tr");
+      row.classList.add(dayObj.className);
+      const sMin = toMinutes(block.start);
+      const eMin = toMinutes(block.end);
+      if (dayObj.day === today) {
+        if (currentMinutes >= sMin && currentMinutes < eMin) row.classList.add("current");
+        else if (currentMinutes >= eMin) row.classList.add("past");
+      }
+      const act = block.activity.replace(/\n/g, '<br>');
+      row.innerHTML = `
+        <td class="time-col">${block.start} – ${block.end}</td>
+        <td class="activity-col">${act}</td>
+      `;
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    section.appendChild(table);
+    container.appendChild(section);
+  });
+  document.body.appendChild(container);
+}
+
+// Initialize
+buildSchedule();
+updateDisplay();
+setInterval(updateDisplay, 60000);
+</script>
+</body>
+</html>

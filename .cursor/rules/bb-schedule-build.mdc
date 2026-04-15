@@ -1,0 +1,23 @@
+---
+description: Run PyInstaller build after BB Schedule source or build script changes
+globs: main.py,build.bat,requirements.txt,watch-build.ps1
+alwaysApply: false
+---
+
+# BB Schedule — build after changes
+
+When you finish edits to `main.py`, `requirements.txt`, `build.bat`, or `watch-build.ps1`, run a release build from the project root:
+
+```bat
+build.bat
+```
+
+This produces `dist\BBSchedule.exe` (build uses `%TEMP%` then copies into `dist` to avoid Google Drive file locks).
+
+For continuous rebuilds while developing, the maintainer can run:
+
+```powershell
+.\watch-build.ps1
+```
+
+Do not skip the build when the user expects an updated `.exe` after code changes.
