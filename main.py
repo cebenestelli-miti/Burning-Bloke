@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import subprocess
 import sys
 from collections import defaultdict
 import time
@@ -259,6 +260,18 @@ def themed_message(
 
 def config_path() -> str:
     return os.path.join(app_directory(), CONFIG_NAME)
+
+
+def find_git_repo_root(start_dir: str) -> Optional[str]:
+    """Find nearest parent directory containing .git."""
+    cur = os.path.abspath(start_dir)
+    while True:
+        if os.path.isdir(os.path.join(cur, ".git")):
+            return cur
+        parent = os.path.dirname(cur)
+        if parent == cur:
+            return None
+        cur = parent
 
 
 def sort_activity_types(vals: List[str]) -> List[str]:
@@ -520,7 +533,7 @@ def build_event_status_html(cfg: Dict[str, Any]) -> str:
       margin: 0;
       padding: 0;
       overflow-x: hidden;
-      overflow-y: visible;
+      overflow-y: hidden;
       height: auto;
       min-height: 100%;
       background: transparent;
@@ -1652,6 +1665,9 @@ class AdminApp(ctk.CTk):
             side="left", padx=(0, 10)
         )
         ctk.CTkButton(save_row, text="Export HTML", width=140, command=self._export_html).pack(
+            side="left", padx=(0, 10)
+        )
+        ctk.CTkButton(save_row, text="Push to Git", width=130, command=self._push_to_git).pack(
             side="left"
         )
 
@@ -1918,6 +1934,58 @@ class AdminApp(ctk.CTk):
             kind="success",
             detail="Open this file in a browser. Live status uses the viewer's clock.",
         )
+
+    def _push_to_git(self) -> None:
+        repo = find_git_repo_root(app_directory())
+        if not repo:
+            themed_message(
+                self,
+                "Git error",
+                "No git repository found in this app folder or its parent folders.",
+                kind="error",
+            )
+            return
+
+        # Save config first so latest app edits are included.
+        path = os.path.join(repo, CONFIG_NAME)
+        cfg = self._collect_config()
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(cfg, f, indent=2)
+        except OSError as e:
+            themed_message(self, "Save failed", str(e), kind="error")
+            return
+
+        def run_git(args: List[str], allow_fail: bool = False) -> subprocess.CompletedProcess[str]:
+            cp = subprocess.run(
+                ["git", "-C", repo] + args,
+                check=False,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+            )
+            if not allow_fail and cp.returncode != 0:
+                raise RuntimeError((cp.stderr or cp.stdout or "Git command failed").strip())
+            return cp
+
+        try:
+            run_git(["add", "-A"])
+            status = run_git(["status", "--porcelain"], allow_fail=False)
+            committed = False
+            if status.stdout.strip():
+                msg = f"Update BB Schedule project ({datetime.now().strftime('%Y-%m-%d %H:%M')})"
+                run_git(["commit", "-m", msg])
+                committed = True
+
+            push = run_git(["push", "origin", "main"], allow_fail=False)
+            detail = "Changes committed and pushed." if committed else "No local changes to commit; pushed current main."
+            out = (push.stdout or "").strip()
+            if out:
+                detail += f"\n\n{out}"
+            themed_message(self, "Pushed", "Git push completed successfully.", kind="success", detail=detail)
+        except RuntimeError as e:
+            themed_message(self, "Git push failed", str(e), kind="error")
 
     def _start_display(self):
         if self._display_win is not None:
