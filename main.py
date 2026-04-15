@@ -519,7 +519,6 @@ def build_event_status_html(cfg: Dict[str, Any]) -> str:
     html, body {{
       margin: 0;
       padding: 0;
-      overflow-y: hidden;
       overflow-x: hidden;
       background: transparent;
     }}
