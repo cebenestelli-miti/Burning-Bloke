@@ -520,6 +520,9 @@ def build_event_status_html(cfg: Dict[str, Any]) -> str:
       margin: 0;
       padding: 0;
       overflow-x: hidden;
+      overflow-y: visible;
+      height: auto;
+      min-height: 100%;
       background: transparent;
     }}
     body {{
@@ -816,9 +819,25 @@ function buildSchedule() {{
   document.body.appendChild(container);
 }}
 
+function notifyParentHeight() {{
+  const h = Math.max(
+    document.body.scrollHeight,
+    document.documentElement.scrollHeight,
+    document.body.offsetHeight,
+    document.documentElement.offsetHeight
+  );
+  try {{
+    window.parent.postMessage({{ type: "bb-schedule-height", height: h }}, "*");
+  }} catch (_e) {{}}
+}}
+
 buildSchedule();
 updateDisplay();
 setInterval(updateDisplay, 60000);
+notifyParentHeight();
+setTimeout(notifyParentHeight, 50);
+setTimeout(notifyParentHeight, 400);
+window.addEventListener("resize", notifyParentHeight);
 </script>
 </body>
 </html>
