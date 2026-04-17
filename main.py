@@ -952,7 +952,7 @@ def build_event_status_html(
 <div id="schedule-container"></div>
 
 <div id="map-section" class="map-card">
-  <h2 style="margin: 8px 0 12px;">Site Map</h2>
+  <h2 id="map-card-title" style="margin: 8px 0 12px;">Site Map</h2>
   <div id="map-links" class="map-links"></div>
   <div id="map-wrap" class="map-wrap">
     <img src="{map_src}" width="{map_image_width}" height="{map_image_height}" alt="Burning Bloke site map"/>
@@ -1176,7 +1176,10 @@ function scrollMainDocumentToElement(el, block) {{
     if (!vh) return;
     let top;
     if (b === "start") {{
-      top = r.top + y0 - 10;
+      const vv = window.visualViewport;
+      const vTop = vv && typeof vv.offsetTop === "number" ? vv.offsetTop : 0;
+      const pad = 10;
+      top = r.top + y0 - vTop - pad;
     }} else {{
       const mid = r.top + y0 + r.height / 2;
       top = mid - vh / 2;
@@ -1215,9 +1218,9 @@ function scrollMainDocumentToElement(el, block) {{
 /**
  * When this page is in an iframe (e.g. Squarespace), the *host* page scrolls — not the iframe's window.
  * Standalone scroll uses scrollMainDocumentToElement; embeds need the parent to listen for this message.
- * Parent listens for postMessage type bb-schedule-scroll-to-map (mapMidY, mapTop, iframeViewportH).
+ * Parent listens for postMessage type bb-schedule-scroll-to-map (mapMidY, mapTop, iframeViewportH, scrollMode).
  */
-function notifyParentScrollToMap(el) {{
+function notifyParentScrollToMap(el, scrollMode) {{
   if (!el) return;
   let embedded = false;
   try {{
@@ -1239,6 +1242,7 @@ function notifyParentScrollToMap(el) {{
           mapMidY: mapMidY,
           mapTop: mapTop,
           iframeViewportH: viewportHeightPx() || window.innerHeight || 0,
+          scrollMode: scrollMode || "titleAtTop",
         }},
         "*"
       );
@@ -1249,12 +1253,12 @@ function notifyParentScrollToMap(el) {{
 
 function focusMapLocation(id, label) {{
   const mapSection = document.getElementById("map-section");
-  const mapFocusEl = document.getElementById("map-wrap") || mapSection;
+  const mapScrollEl = document.getElementById("map-card-title") || mapSection;
   const zone = document.getElementById("zone-" + id);
-  scrollMainDocumentToElement(mapFocusEl, "center");
-  notifyParentScrollToMap(mapFocusEl);
-  setTimeout(() => notifyParentScrollToMap(mapFocusEl), 120);
-  setTimeout(() => notifyParentScrollToMap(mapFocusEl), 450);
+  scrollMainDocumentToElement(mapScrollEl, "start");
+  notifyParentScrollToMap(mapScrollEl, "titleAtTop");
+  setTimeout(() => notifyParentScrollToMap(mapScrollEl, "titleAtTop"), 120);
+  setTimeout(() => notifyParentScrollToMap(mapScrollEl, "titleAtTop"), 450);
   setTimeout(() => {{
     if (!zone || !mapTarget) return;
     const override = targetOverrides[id];
@@ -1275,7 +1279,7 @@ function focusMapLocation(id, label) {{
     }}
   }} catch (_e) {{}}
   notifyParentHeight();
-  setTimeout(() => notifyParentScrollToMap(mapFocusEl), 220);
+  setTimeout(() => notifyParentScrollToMap(mapScrollEl, "titleAtTop"), 220);
 }}
 
 function bindMapClicks() {{
