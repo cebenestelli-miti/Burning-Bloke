@@ -1110,10 +1110,58 @@ function buildLocationLinks() {{
   }});
 }}
 
+/** Mobile WebKit often ignores scrollIntoView from button taps; scroll the root scroller explicitly. */
+function scrollMainDocumentToElement(el, block) {{
+  if (!el) return;
+  const b = block || "center";
+  const step = () => {{
+    try {{
+      const ae = document.activeElement;
+      if (ae && typeof ae.blur === "function") ae.blur();
+    }} catch (_x) {{}}
+    const se = document.scrollingElement || document.documentElement;
+    const r = el.getBoundingClientRect();
+    const y0 = window.pageYOffset || se.scrollTop || 0;
+    let top;
+    if (b === "start") {{
+      top = r.top + y0 - 10;
+    }} else {{
+      const mid = r.top + y0 + r.height / 2;
+      top = mid - window.innerHeight / 2;
+    }}
+    top = Math.max(0, top);
+    const mq =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("(max-width: 768px), (pointer: coarse)")
+        : null;
+    const preferInstant = mq && mq.matches;
+    const behavior = preferInstant ? "auto" : "smooth";
+    const apply = (beh) => {{
+      try {{
+        se.scrollTo({{ left: 0, top: top, behavior: beh }});
+      }} catch (_e) {{
+        try {{
+          window.scrollTo(0, top);
+        }} catch (_e2) {{
+          se.scrollTop = top;
+        }}
+      }}
+    }};
+    apply(behavior);
+    if (!preferInstant) {{
+      setTimeout(() => {{
+        const y1 = window.pageYOffset || se.scrollTop || 0;
+        if (Math.abs(y1 - top) > 56) apply("auto");
+      }}, 160);
+    }}
+  }};
+  requestAnimationFrame(() => requestAnimationFrame(step));
+}}
+
 function focusMapLocation(id, label) {{
   const mapSection = document.getElementById("map-section");
   const zone = document.getElementById("zone-" + id);
-  mapSection.scrollIntoView({{ behavior: "smooth", block: "center" }});
+  scrollMainDocumentToElement(mapSection, "center");
   setTimeout(() => {{
     if (!zone || !mapTarget) return;
     const override = targetOverrides[id];
