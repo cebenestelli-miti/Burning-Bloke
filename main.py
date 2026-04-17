@@ -3,6 +3,7 @@ BB Schedule — admin UI + fullscreen display. Paths are relative to the executa
 """
 from __future__ import annotations
 
+import html
 import json
 import os
 import shutil
@@ -638,6 +639,12 @@ def build_event_status_html(
     location_types = normalize_location_types_from_config(cfg.get("location_types"))
     locations_payload = json.dumps(location_types, ensure_ascii=False).replace("<", "\\u003c")
     map_src = map_image_name.replace("\\", "/")
+    _gen = datetime.now().astimezone()
+    _tz = (_gen.tzname() or "").strip()
+    _gen_line = _gen.strftime("%d %b %Y, %I:%M %p").strip()
+    if _tz:
+        _gen_line = f"{_gen_line} ({_tz})"
+    html_generated_label = html.escape(_gen_line)
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -874,6 +881,12 @@ def build_event_status_html(
       font-size: 0.92em;
       min-height: 1.2em;
     }}
+    .map-hint--generated {{
+      margin-top: 4px;
+      margin-bottom: 0;
+      font-size: 0.8em;
+      opacity: 0.92;
+    }}
     .sat {{ background: rgba(255,242,230,0.9); }}
     .sun {{ background: rgba(240,230,255,0.9); }}
     .mon {{ background: rgba(230,255,251,0.9); }}
@@ -957,6 +970,7 @@ def build_event_status_html(
     </svg>
   </div>
   <p id="map-status" class="map-hint">Click schedule/location links to target the map.</p>
+  <p id="map-generated" class="map-hint map-hint--generated">HTML generated {html_generated_label}</p>
 </div>
 
 <script>
@@ -1141,7 +1155,12 @@ function buildLocationLinks() {{
   }});
 }}
 
-/** Mobile WebKit often ignores scrollIntoView from button taps; scroll the root scroller explicitly. */
+/** Visible viewport height (handles mobile URL bar / iframe). */
+function viewportHeightPx() {{
+  if (window.visualViewport && window.visualViewport.height) return window.visualViewport.height;
+  return window.innerHeight || 0;
+}}
+
 function scrollMainDocumentToElement(el, block) {{
   if (!el) return;
   const b = block || "center";
@@ -1153,12 +1172,16 @@ function scrollMainDocumentToElement(el, block) {{
     const se = document.scrollingElement || document.documentElement;
     const r = el.getBoundingClientRect();
     const y0 = window.pageYOffset || se.scrollTop || 0;
+    const vh = viewportHeightPx();
+    if (!vh) return;
     let top;
     if (b === "start") {{
       top = r.top + y0 - 10;
     }} else {{
       const mid = r.top + y0 + r.height / 2;
-      top = mid - window.innerHeight / 2;
+      top = mid - vh / 2;
+      const overshootPx = Math.min(80, Math.max(24, Math.round(vh * 0.05)));
+      top -= overshootPx;
     }}
     top = Math.max(0, top);
     const mq =
@@ -1215,7 +1238,7 @@ function notifyParentScrollToMap(el) {{
           type: "bb-schedule-scroll-to-map",
           mapMidY: mapMidY,
           mapTop: mapTop,
-          iframeViewportH: window.innerHeight || 0,
+          iframeViewportH: viewportHeightPx() || window.innerHeight || 0,
         }},
         "*"
       );
@@ -1226,11 +1249,12 @@ function notifyParentScrollToMap(el) {{
 
 function focusMapLocation(id, label) {{
   const mapSection = document.getElementById("map-section");
+  const mapFocusEl = document.getElementById("map-wrap") || mapSection;
   const zone = document.getElementById("zone-" + id);
-  scrollMainDocumentToElement(mapSection, "center");
-  notifyParentScrollToMap(mapSection);
-  setTimeout(() => notifyParentScrollToMap(mapSection), 120);
-  setTimeout(() => notifyParentScrollToMap(mapSection), 450);
+  scrollMainDocumentToElement(mapFocusEl, "center");
+  notifyParentScrollToMap(mapFocusEl);
+  setTimeout(() => notifyParentScrollToMap(mapFocusEl), 120);
+  setTimeout(() => notifyParentScrollToMap(mapFocusEl), 450);
   setTimeout(() => {{
     if (!zone || !mapTarget) return;
     const override = targetOverrides[id];
@@ -1251,7 +1275,7 @@ function focusMapLocation(id, label) {{
     }}
   }} catch (_e) {{}}
   notifyParentHeight();
-  setTimeout(() => notifyParentScrollToMap(mapSection), 220);
+  setTimeout(() => notifyParentScrollToMap(mapFocusEl), 220);
 }}
 
 function bindMapClicks() {{
