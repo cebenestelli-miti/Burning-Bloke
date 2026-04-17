@@ -76,6 +76,7 @@ HTML_EXPORT_NAME = "event_status.html"
 ICON_ICO = "app_icon.ico"
 BACKGROUND_IMAGE_NAME = "Background.jpg"
 MAP_IMAGE_CANDIDATES = [
+    os.path.join("Map", "BB map3.png"),
     "site_map_art_illustrated2.png",
     "site_map_art_illustrated.png",
     "site_map_art_display.jpg",
@@ -602,18 +603,41 @@ def ensure_export_assets(out_dir: str, base_dir: str) -> str:
     if os.path.isfile(src):
         try:
             if os.path.abspath(src) != os.path.abspath(dst):
+                dst_parent = os.path.dirname(dst)
+                if dst_parent:
+                    os.makedirs(dst_parent, exist_ok=True)
                 shutil.copy2(src, dst)
         except OSError:
             pass
     return map_name
 
 
-def build_event_status_html(cfg: Dict[str, Any], map_image_name: str = "site_map_art_illustrated2.png") -> str:
+def _map_image_pixel_size(map_path: str) -> Tuple[int, int]:
+    """Intrinsic pixels for <img width/height>; overlay viewBox stays 767×1024."""
+    try:
+        from PIL import Image
+
+        with Image.open(map_path) as im:
+            w, h = im.size
+            if w > 0 and h > 0:
+                return w, h
+    except Exception:
+        pass
+    return 767, 1024
+
+
+def build_event_status_html(
+    cfg: Dict[str, Any],
+    map_image_name: str = "site_map_art_illustrated2.png",
+    map_image_width: int = 767,
+    map_image_height: int = 1024,
+) -> str:
     schedule = config_to_public_schedule(cfg)
     payload = json.dumps(schedule, ensure_ascii=False)
     payload = payload.replace("<", "\\u003c")
     location_types = normalize_location_types_from_config(cfg.get("location_types"))
     locations_payload = json.dumps(location_types, ensure_ascii=False).replace("<", "\\u003c")
+    map_src = map_image_name.replace("\\", "/")
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -918,18 +942,18 @@ def build_event_status_html(cfg: Dict[str, Any], map_image_name: str = "site_map
   <h2 style="margin: 8px 0 12px;">Site Map</h2>
   <div id="map-links" class="map-links"></div>
   <div id="map-wrap" class="map-wrap">
-    <img src="{map_image_name}" width="767" height="1024" alt="Burning Bloke site map"/>
+    <img src="{map_src}" width="{map_image_width}" height="{map_image_height}" alt="Burning Bloke site map"/>
     <div id="map-target" class="map-target" aria-hidden="true"></div>
     <svg viewBox="0 0 767 1024" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       <a href="#the-barn" aria-label="The Barn"><rect id="zone-the-barn" x="25" y="40" width="275" height="185" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#fire-1" aria-label="Fire"><rect id="zone-fire-1" x="190" y="220" width="205" height="145" rx="16" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#sauna" aria-label="Sauna"><ellipse id="zone-sauna" cx="250" cy="665" rx="85" ry="65" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#watch-tower" aria-label="Watch Tower"><rect id="zone-watch-tower" x="490" y="500" width="170" height="170" rx="14" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#fire-1" aria-label="Fire"><rect id="zone-fire-1" x="178" y="220" width="205" height="145" rx="16" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#sauna" aria-label="Sauna"><ellipse id="zone-sauna" cx="124" cy="648" rx="72" ry="58" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#watch-tower" aria-label="Watch Tower"><rect id="zone-watch-tower" x="514" y="472" width="170" height="170" rx="14" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#race-track" aria-label="Race Track"><polygon id="zone-race-track" points="405,150 750,150 750,700 465,700 405,640" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#bayside" aria-label="Bayside"><rect id="zone-bayside" x="165" y="740" width="550" height="225" rx="65" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#dam-forest" aria-label="Dam Forest"><rect id="zone-dam-forest" x="406" y="792" width="155" height="208" rx="26" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#bayside" aria-label="Bayside"><rect id="zone-bayside" x="158" y="740" width="552" height="225" rx="65" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#touch-football" aria-label="Touch Football"><ellipse id="zone-touch-football" cx="380" cy="400" rx="70" ry="70" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#shooting" aria-label="Shooting"><ellipse id="zone-shooting" cx="210" cy="720" rx="72" ry="62" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#dam-forest" aria-label="Dam Forest"><rect id="zone-dam-forest" x="22" y="805" width="132" height="205" rx="28" fill="rgba(255,255,255,0.001)"/></a>
     </svg>
   </div>
   <p id="map-status" class="map-hint">Click schedule/location links to target the map.</p>
@@ -942,12 +966,13 @@ const mapTarget = document.getElementById("map-target");
 const mapStatus = document.getElementById("map-status");
 const TARGET_VISIBLE_MS = 5200;
 const targetOverrides = {{
-  "fire-1": {{ xPct: 34.0, yPct: 27.0 }},
-  "watch-tower": {{ xPct: 66.4, yPct: 56.5 }},
-  "bayside": {{ xPct: 63.4, yPct: 71.8 }},
+  "fire-1": {{ xPct: 32.6, yPct: 27.0 }},
+  "watch-tower": {{ xPct: 68.8, yPct: 53.8 }},
+  "bayside": {{ xPct: 60.2, yPct: 71.8 }},
   "touch-football": {{ xPct: 64.8, yPct: 22.0 }},
   "shooting": {{ xPct: 24.8, yPct: 70.0 }},
-  "dam-forest": {{ xPct: 11.9, yPct: 88.4 }}
+  "sauna": {{ xPct: 16.2, yPct: 63.3 }},
+  "dam-forest": {{ xPct: 63.0, yPct: 86.0 }}
 }};
 
 function locationToId(name) {{
@@ -2454,7 +2479,9 @@ class AdminApp(ctk.CTk):
         out_dir = os.path.dirname(out_path)
         try:
             map_name = ensure_export_assets(out_dir, app_directory())
-            html = build_event_status_html(cfg, map_image_name=map_name)
+            map_path = os.path.join(app_directory(), map_name)
+            mw, mh = _map_image_pixel_size(map_path)
+            html = build_event_status_html(cfg, map_image_name=map_name, map_image_width=mw, map_image_height=mh)
             with open(out_path, "w", encoding="utf-8") as f:
                 f.write(html)
         except OSError as e:
