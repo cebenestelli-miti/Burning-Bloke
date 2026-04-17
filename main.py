@@ -1113,7 +1113,6 @@ function buildLocationLinks() {{
 function focusMapLocation(id, label) {{
   const mapSection = document.getElementById("map-section");
   const zone = document.getElementById("zone-" + id);
-  location.hash = id;
   mapSection.scrollIntoView({{ behavior: "smooth", block: "center" }});
   setTimeout(() => {{
     if (!zone || !mapTarget) return;
@@ -1129,6 +1128,11 @@ function focusMapLocation(id, label) {{
     setTimeout(() => mapTarget.classList.remove("active"), TARGET_VISIBLE_MS);
   }}, 450);
   mapStatus.textContent = `Targeted: ${{label}}`;
+  try {{
+    if (window.history && window.history.replaceState) {{
+      window.history.replaceState(null, "", "#" + id);
+    }}
+  }} catch (_e) {{}}
   notifyParentHeight();
 }}
 
@@ -1157,9 +1161,30 @@ function notifyParentHeight() {{
   }} catch (_e) {{}}
 }}
 
+function bindHeightObservers() {{
+  const mapImg = document.querySelector("#map-wrap img");
+  if (mapImg) {{
+    if (mapImg.complete) {{
+      notifyParentHeight();
+    }} else {{
+      mapImg.addEventListener("load", notifyParentHeight, {{ once: true }});
+      mapImg.addEventListener("error", notifyParentHeight, {{ once: true }});
+    }}
+  }}
+  if (typeof ResizeObserver !== "undefined") {{
+    try {{
+      const ro = new ResizeObserver(() => notifyParentHeight());
+      ro.observe(document.body);
+      ro.observe(document.documentElement);
+    }} catch (_e) {{}}
+  }}
+  window.addEventListener("load", notifyParentHeight);
+}}
+
 buildSchedule();
 buildLocationLinks();
 bindMapClicks();
+bindHeightObservers();
 updateDisplay();
 setInterval(updateDisplay, 60000);
 notifyParentHeight();
