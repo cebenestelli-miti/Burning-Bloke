@@ -1189,10 +1189,48 @@ function scrollMainDocumentToElement(el, block) {{
   requestAnimationFrame(() => requestAnimationFrame(step));
 }}
 
+/**
+ * When this page is in an iframe (e.g. Squarespace), the *host* page scrolls — not the iframe's window.
+ * Standalone scroll uses scrollMainDocumentToElement; embeds need the parent to listen for this message.
+ * Parent listens for postMessage type bb-schedule-scroll-to-map (mapMidY, mapTop, iframeViewportH).
+ */
+function notifyParentScrollToMap(el) {{
+  if (!el) return;
+  let embedded = false;
+  try {{
+    embedded = window.self !== window.top;
+  }} catch (_e) {{
+    embedded = true;
+  }}
+  if (!embedded) return;
+  const measure = () => {{
+    try {{
+      const se = document.scrollingElement || document.documentElement;
+      const r = el.getBoundingClientRect();
+      const y0 = window.pageYOffset || se.scrollTop || 0;
+      const mapTop = r.top + y0;
+      const mapMidY = mapTop + r.height / 2;
+      window.parent.postMessage(
+        {{
+          type: "bb-schedule-scroll-to-map",
+          mapMidY: mapMidY,
+          mapTop: mapTop,
+          iframeViewportH: window.innerHeight || 0,
+        }},
+        "*"
+      );
+    }} catch (_e) {{}}
+  }};
+  requestAnimationFrame(() => requestAnimationFrame(measure));
+}}
+
 function focusMapLocation(id, label) {{
   const mapSection = document.getElementById("map-section");
   const zone = document.getElementById("zone-" + id);
   scrollMainDocumentToElement(mapSection, "center");
+  notifyParentScrollToMap(mapSection);
+  setTimeout(() => notifyParentScrollToMap(mapSection), 120);
+  setTimeout(() => notifyParentScrollToMap(mapSection), 450);
   setTimeout(() => {{
     if (!zone || !mapTarget) return;
     const override = targetOverrides[id];
@@ -1213,6 +1251,7 @@ function focusMapLocation(id, label) {{
     }}
   }} catch (_e) {{}}
   notifyParentHeight();
+  setTimeout(() => notifyParentScrollToMap(mapSection), 220);
 }}
 
 function bindMapClicks() {{
