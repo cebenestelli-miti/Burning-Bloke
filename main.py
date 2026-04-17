@@ -627,6 +627,11 @@ def build_event_status_html(cfg: Dict[str, Any], map_image_name: str = "site_map
       height: auto;
       min-height: 100%;
       background: transparent;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }}
+    html::-webkit-scrollbar, body::-webkit-scrollbar {{
+      display: none;
     }}
     body {{
       font-family: Arial, sans-serif;
@@ -1109,7 +1114,7 @@ function focusMapLocation(id, label) {{
   const mapSection = document.getElementById("map-section");
   const zone = document.getElementById("zone-" + id);
   location.hash = id;
-  mapSection.scrollIntoView({{ behavior: "smooth", block: "start" }});
+  mapSection.scrollIntoView({{ behavior: "smooth", block: "center" }});
   setTimeout(() => {{
     if (!zone || !mapTarget) return;
     const override = targetOverrides[id];
@@ -1924,8 +1929,8 @@ class AdminApp(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.title("BB Schedule — Admin")
-        self.geometry("1100x780")
-        self.minsize(900, 640)
+        self.geometry("1380x780")
+        self.minsize(1280, 640)
         apply_window_icon(self)
 
         self._display_win: Optional[DisplayWindow] = None
