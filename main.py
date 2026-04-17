@@ -58,10 +58,28 @@ DEFAULT_ACTIVITY_TYPES = [
 
 PROTECTED_ACTIVITY_TYPES: frozenset[str] = frozenset(DEFAULT_ACTIVITY_TYPES)
 
+DEFAULT_LOCATION_TYPES = [
+    "The Barn",
+    "Fire",
+    "Sauna",
+    "Watch Tower",
+    "Bayside",
+    "Touch Football",
+    "Shooting",
+]
+
+PROTECTED_LOCATION_TYPES: frozenset[str] = frozenset(DEFAULT_LOCATION_TYPES)
+
 CONFIG_NAME = "config.json"
 HTML_EXPORT_NAME = "event_status.html"
 ICON_ICO = "app_icon.ico"
 BACKGROUND_IMAGE_NAME = "Background.jpg"
+MAP_IMAGE_CANDIDATES = [
+    "site_map_art_illustrated2.png",
+    "site_map_art_illustrated.png",
+    "site_map_art_display.jpg",
+    "site_map_art.jpg",
+]
 
 # --- Paths -------------------------------------------------------------
 
@@ -291,6 +309,19 @@ def normalize_activity_types_from_config(raw: Any) -> List[str]:
     return sort_activity_types(result)
 
 
+def normalize_location_types_from_config(raw: Any) -> List[str]:
+    if not isinstance(raw, list):
+        return sort_activity_types(list(DEFAULT_LOCATION_TYPES))
+    result = list(DEFAULT_LOCATION_TYPES)
+    seen = set(result)
+    for x in raw:
+        s = str(x).strip()
+        if s and s not in seen:
+            result.append(s)
+            seen.add(s)
+    return sort_activity_types(result)
+
+
 # --- Time helpers ------------------------------------------------------
 
 
@@ -359,6 +390,27 @@ def activity_label_for_bucket(g1: str, g2: str) -> str:
     return g2
 
 
+def infer_locations_from_text(text: str) -> Tuple[str, str]:
+    s = (text or "").strip().casefold()
+    loc1 = ""
+    loc2 = ""
+    if "breakfast" in s:
+        loc1 = "The Barn"
+    if "kayaking" in s or "meditation" in s:
+        loc1 = "Bayside"
+    if "sauna" in s or "ice bath" in s or "icebath" in s:
+        loc1 = "Sauna"
+    if "rally driving" in s:
+        loc1 = "Watch Tower"
+    if "campfire" in s or "bloke burning" in s:
+        loc1 = "Fire"
+    if "touch football" in s:
+        loc1 = "Touch Football"
+    if "shooting" in s:
+        loc1 = "Shooting"
+    return loc1, loc2
+
+
 def daterange_inclusive(start: date, end: date) -> List[date]:
     out: List[date] = []
     d = start
@@ -397,7 +449,7 @@ def normalize_activity_group(val: Any) -> str:
 
 def activity_row_to_contribution(
     a: Dict[str, Any],
-) -> Optional[Tuple[Tuple[int, int], str, str, str]]:
+) -> Optional[Tuple[Tuple[int, int], str, str, str, str, str]]:
     """One row's times + group activities + image. Legacy: name + optional group."""
     st = parse_hhmm(a.get("start", ""))
     et = parse_hhmm(a.get("end", ""))
@@ -409,6 +461,8 @@ def activity_row_to_contribution(
         return None
     key = (ssec, esec)
     img = (a.get("image") or "").strip()
+    loc1 = (a.get("loc_g1") or "").strip()
+    loc2 = (a.get("loc_g2") or "").strip()
     if "name_g1" in a or "name_g2" in a:
         g1 = (a.get("name_g1") or "").strip()
         g2 = (a.get("name_g2") or "").strip()
@@ -420,24 +474,28 @@ def activity_row_to_contribution(
             g1, g2 = "", nm
         else:
             g1, g2 = nm, ""
-    return (key, g1, g2, img)
+    return (key, g1, g2, img, loc1, loc2)
 
 
 def normalize_day_activities(activities: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """One entry per time slot: shared start/end, name_g1, name_g2, one image."""
     slot_map: Dict[Tuple[int, int], Dict[str, str]] = defaultdict(
-        lambda: {"name_g1": "", "name_g2": "", "image": ""}
+        lambda: {"name_g1": "", "name_g2": "", "image": "", "loc_g1": "", "loc_g2": ""}
     )
     for a in sort_activities(list(activities or [])):
         c = activity_row_to_contribution(a)
         if not c:
             continue
-        key, g1, g2, img = c
+        key, g1, g2, img, loc1, loc2 = c
         b = slot_map[key]
         if g1:
             b["name_g1"] = g1
         if g2:
             b["name_g2"] = g2
+        if loc1:
+            b["loc_g1"] = loc1
+        if loc2:
+            b["loc_g2"] = loc2
         if img and not b["image"]:
             b["image"] = img
     out: List[Dict[str, Any]] = []
@@ -451,6 +509,8 @@ def normalize_day_activities(activities: List[Dict[str, Any]]) -> List[Dict[str,
                 "end": hhmm(eh, em),
                 "name_g1": b["name_g1"],
                 "name_g2": b["name_g2"],
+                "loc_g1": b["loc_g1"],
+                "loc_g2": b["loc_g2"],
                 "image": b["image"],
             }
         )
@@ -486,8 +546,14 @@ def config_to_public_schedule(cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
                 continue
             g1 = (a.get("name_g1") or "").strip()
             g2 = (a.get("name_g2") or "").strip()
+            l1 = (a.get("loc_g1") or "").strip()
+            l2 = (a.get("loc_g2") or "").strip()
             if not g1 and not g2:
                 continue
+            if g1 and not l1:
+                l1, _ = infer_locations_from_text(g1)
+            if g2 and not l2:
+                l2, _ = infer_locations_from_text(g2)
             if g1 and g2:
                 if g1.casefold() == g2.casefold():
                     activity = g1
@@ -504,6 +570,8 @@ def config_to_public_schedule(cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
                     "start": f"{sh:02d}{sm:02d}",
                     "end": f"{eh:02d}{em:02d}",
                     "activity": activity,
+                    "location_g1": l1,
+                    "location_g2": l2,
                 }
             )
         out.append(
@@ -517,23 +585,45 @@ def config_to_public_schedule(cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
     return out
 
 
-def build_event_status_html(cfg: Dict[str, Any]) -> str:
+def resolve_map_image_filename(base_dir: str) -> str:
+    for name in MAP_IMAGE_CANDIDATES:
+        if os.path.isfile(os.path.join(base_dir, name)):
+            return name
+    return MAP_IMAGE_CANDIDATES[0]
+
+
+def ensure_export_assets(out_dir: str, base_dir: str) -> str:
+    map_name = resolve_map_image_filename(base_dir)
+    src = os.path.join(base_dir, map_name)
+    dst = os.path.join(out_dir, map_name)
+    if os.path.isfile(src):
+        try:
+            if os.path.abspath(src) != os.path.abspath(dst):
+                shutil.copy2(src, dst)
+        except OSError:
+            pass
+    return map_name
+
+
+def build_event_status_html(cfg: Dict[str, Any], map_image_name: str = "site_map_art_illustrated2.png") -> str:
     schedule = config_to_public_schedule(cfg)
     payload = json.dumps(schedule, ensure_ascii=False)
     payload = payload.replace("<", "\\u003c")
+    location_types = normalize_location_types_from_config(cfg.get("location_types"))
+    locations_payload = json.dumps(location_types, ensure_ascii=False).replace("<", "\\u003c")
 
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Event Now - What's Happening</title>
+  <title>Event Live Status</title>
   <style>
     html, body {{
       margin: 0;
       padding: 0;
       overflow-x: hidden;
-      overflow-y: hidden;
+      overflow-y: auto;
       height: auto;
       min-height: 100%;
       background: transparent;
@@ -653,6 +743,105 @@ def build_event_status_html(cfg: Dict[str, Any]) -> str:
     .activity-col {{
       line-height: 1.6;
     }}
+    .location-chips {{
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }}
+    .loc-chip {{
+      border: 1px solid #90caf9;
+      background: #e3f2fd;
+      color: #0d47a1;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }}
+    .loc-chip:hover {{ background: #bbdefb; }}
+    .map-card {{
+      margin: 20px 0 48px;
+      background: rgba(255,255,255,0.97);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      overflow: hidden;
+      padding: 14px 12px 16px;
+    }}
+    .map-links {{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 12px;
+      justify-content: center;
+    }}
+    .map-link {{
+      border: 1px solid #ffd180;
+      background: #fff3e0;
+      color: #bf360c;
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 0.82em;
+      font-weight: 700;
+      cursor: pointer;
+    }}
+    .map-wrap {{
+      position: relative;
+      width: 100%;
+      max-width: 767px;
+      margin: 0 auto;
+      line-height: 0;
+    }}
+    .map-wrap img {{
+      width: 100%;
+      height: auto;
+      display: block;
+    }}
+    .map-target {{
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 20px;
+      height: 20px;
+      margin-left: -10px;
+      margin-top: -10px;
+      border-radius: 999px;
+      background: #e53935;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 0 rgba(229,57,53,0.8);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 4;
+      transform: scale(0.85);
+    }}
+    .map-target.active {{
+      opacity: 1;
+      animation: target-pulse 1s ease-out infinite;
+      transform: scale(1);
+    }}
+    @keyframes target-pulse {{
+      0% {{ box-shadow: 0 0 0 0 rgba(229,57,53,0.75); }}
+      70% {{ box-shadow: 0 0 0 20px rgba(229,57,53,0); }}
+      100% {{ box-shadow: 0 0 0 0 rgba(229,57,53,0); }}
+    }}
+    .map-wrap svg {{
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }}
+    .map-wrap a {{
+      pointer-events: auto;
+      cursor: pointer;
+    }}
+    .map-hint {{
+      text-align: center;
+      color: #48606f;
+      margin: 10px 0 0;
+      font-size: 0.92em;
+      min-height: 1.2em;
+    }}
     .sat {{ background: rgba(255,242,230,0.9); }}
     .sun {{ background: rgba(240,230,255,0.9); }}
     .mon {{ background: rgba(230,255,251,0.9); }}
@@ -697,6 +886,10 @@ def build_event_status_html(cfg: Dict[str, Any]) -> str:
       .time-col {{
         width: 120px;
       }}
+      .map-card {{
+        margin: 12px 0 32px;
+        padding: 12px 8px 12px;
+      }}
     }}
   </style>
 </head>
@@ -711,9 +904,57 @@ def build_event_status_html(cfg: Dict[str, Any]) -> str:
 </div>
 
 <h2>Full Schedule</h2>
+<div id="schedule-container"></div>
+
+<div id="map-section" class="map-card">
+  <h2 style="margin: 8px 0 12px;">Site Map</h2>
+  <div id="map-links" class="map-links"></div>
+  <div id="map-wrap" class="map-wrap">
+    <img src="{map_image_name}" width="767" height="1024" alt="Burning Bloke site map"/>
+    <div id="map-target" class="map-target" aria-hidden="true"></div>
+    <svg viewBox="0 0 767 1024" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <a href="#the-barn" aria-label="The Barn"><rect id="zone-the-barn" x="25" y="40" width="275" height="185" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#fire-1" aria-label="Fire"><rect id="zone-fire-1" x="190" y="220" width="205" height="145" rx="16" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#sauna" aria-label="Sauna"><ellipse id="zone-sauna" cx="250" cy="665" rx="85" ry="65" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#watch-tower" aria-label="Watch Tower"><rect id="zone-watch-tower" x="490" y="500" width="170" height="170" rx="14" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#race-track" aria-label="Race Track"><polygon id="zone-race-track" points="405,150 750,150 750,700 465,700 405,640" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#bayside" aria-label="Bayside"><rect id="zone-bayside" x="165" y="740" width="550" height="225" rx="65" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#touch-football" aria-label="Touch Football"><ellipse id="zone-touch-football" cx="380" cy="400" rx="70" ry="70" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#shooting" aria-label="Shooting"><ellipse id="zone-shooting" cx="210" cy="720" rx="72" ry="62" fill="rgba(255,255,255,0.001)"/></a>
+    </svg>
+  </div>
+  <p id="map-status" class="map-hint">Click schedule/location links to target the map.</p>
+</div>
 
 <script>
 const schedule = {payload};
+const locationTypes = {locations_payload};
+const mapTarget = document.getElementById("map-target");
+const mapStatus = document.getElementById("map-status");
+const TARGET_VISIBLE_MS = 5200;
+const targetOverrides = {{
+  "fire-1": {{ xPct: 34.0, yPct: 27.0 }},
+  "watch-tower": {{ xPct: 66.4, yPct: 56.5 }},
+  "bayside": {{ xPct: 63.4, yPct: 71.8 }},
+  "touch-football": {{ xPct: 64.8, yPct: 22.0 }},
+  "shooting": {{ xPct: 24.8, yPct: 70.0 }}
+}};
+
+function locationToId(name) {{
+  const s = (name || "").trim().toLowerCase();
+  const map = {{
+    "the barn": "the-barn",
+    "fire": "fire-1",
+    "sauna": "sauna",
+    "watch tower": "watch-tower",
+    "race track": "race-track",
+    "bayside": "bayside",
+    "bay side": "bayside",
+    "touch football": "touch-football",
+    "shooting": "shooting"
+  }};
+  return map[s] || "";
+}}
 
 function todayIso() {{
   const n = new Date();
@@ -789,8 +1030,7 @@ function updateDisplay() {{
 }}
 
 function buildSchedule() {{
-  const container = document.createElement("div");
-  container.id = "schedule-container";
+  const container = document.getElementById("schedule-container");
   const today = todayIso();
   const {{ currentMinutes }} = getCurrentLocal();
   schedule.forEach(dayObj => {{
@@ -819,17 +1059,85 @@ function buildSchedule() {{
         else if (currentMinutes >= eMin) row.classList.add("past");
       }}
       const act = block.activity.replace(/\\n/g, "<br>");
-      row.innerHTML = `
-        <td class="time-col">${{fmtHm(block.start)}} – ${{fmtHm(block.end)}}</td>
-        <td class="activity-col">${{act}}</td>
-      `;
+      const loc1 = (block.location_g1 || "").trim();
+      const loc2 = (block.location_g2 || "").trim();
+      const locSet = [];
+      if (loc1) locSet.push(loc1);
+      if (loc2 && loc2.toLowerCase() !== loc1.toLowerCase()) locSet.push(loc2);
+      let chipsHtml = "";
+      if (locSet.length) {{
+        chipsHtml = `<div class="location-chips">` + locSet.map((loc) => {{
+          const id = locationToId(loc);
+          if (!id) return "";
+          return `<button type="button" class="loc-chip" data-map-target="${{id}}">Location: ${{loc}}</button>`;
+        }}).join("") + `</div>`;
+      }}
+      row.innerHTML = `<td class="time-col">${{fmtHm(block.start)}} – ${{fmtHm(block.end)}}</td><td class="activity-col">${{act}}${{chipsHtml}}</td>`;
       tbody.appendChild(row);
     }});
     table.appendChild(tbody);
     section.appendChild(table);
     container.appendChild(section);
   }});
-  document.body.appendChild(container);
+  container.addEventListener("click", (event) => {{
+    const btn = event.target && event.target.closest ? event.target.closest(".loc-chip") : null;
+    if (!btn) return;
+    const targetId = btn.getAttribute("data-map-target") || "";
+    if (targetId) {{
+      focusMapLocation(targetId, btn.textContent.replace("Location: ", "").trim());
+    }}
+  }});
+}}
+
+function buildLocationLinks() {{
+  const wrap = document.getElementById("map-links");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  locationTypes.forEach((loc) => {{
+    const id = locationToId(loc);
+    if (!id) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "map-link";
+    b.textContent = loc;
+    b.addEventListener("click", () => focusMapLocation(id, loc));
+    wrap.appendChild(b);
+  }});
+}}
+
+function focusMapLocation(id, label) {{
+  const mapSection = document.getElementById("map-section");
+  const zone = document.getElementById("zone-" + id);
+  location.hash = id;
+  mapSection.scrollIntoView({{ behavior: "smooth", block: "start" }});
+  setTimeout(() => {{
+    if (!zone || !mapTarget) return;
+    const override = targetOverrides[id];
+    const box = zone.getBBox();
+    const cx = override ? override.xPct : ((box.x + box.width / 2) / 767) * 100;
+    const cy = override ? override.yPct : ((box.y + box.height / 2) / 1024) * 100;
+    mapTarget.style.left = `${{cx}}%`;
+    mapTarget.style.top = `${{cy}}%`;
+    mapTarget.classList.remove("active");
+    void mapTarget.offsetWidth;
+    mapTarget.classList.add("active");
+    setTimeout(() => mapTarget.classList.remove("active"), TARGET_VISIBLE_MS);
+  }}, 450);
+  mapStatus.textContent = `Targeted: ${{label}}`;
+  notifyParentHeight();
+}}
+
+function bindMapClicks() {{
+  document.querySelectorAll("#map-wrap svg a").forEach((anchor) => {{
+    anchor.addEventListener("click", (event) => {{
+      event.preventDefault();
+      const href = anchor.getAttribute("href") || "";
+      if (!href.startsWith("#")) return;
+      const id = href.slice(1);
+      const label = (anchor.getAttribute("aria-label") || id).trim();
+      focusMapLocation(id, label);
+    }});
+  }});
 }}
 
 function notifyParentHeight() {{
@@ -845,6 +1153,8 @@ function notifyParentHeight() {{
 }}
 
 buildSchedule();
+buildLocationLinks();
+bindMapClicks();
 updateDisplay();
 setInterval(updateDisplay, 60000);
 notifyParentHeight();
@@ -1390,8 +1700,37 @@ class ActivityRow(ctk.CTkFrame):
         self.combo_g2.set(combo_vals[0])
         admin.register_activity_combo(self.combo_g2)
 
-        ctk.CTkLabel(self, text="Image", text_color=SUBTLE_TEXT_COLOR).grid(
+        loc_types = admin.get_location_types()
+        loc_vals = ([""] + loc_types) if loc_types else [""]
+
+        ctk.CTkLabel(self, text="Loc 1", text_color=SUBTLE_TEXT_COLOR).grid(
             row=0, column=8, sticky="w"
+        )
+        self.combo_l1 = ctk.CTkComboBox(
+            self,
+            values=loc_vals,
+            state="readonly",
+            width=130,
+        )
+        self.combo_l1.grid(row=1, column=8, padx=(0, 6), sticky="nw")
+        self.combo_l1.set(loc_vals[0])
+        admin.register_location_combo(self.combo_l1)
+
+        ctk.CTkLabel(self, text="Loc 2", text_color=SUBTLE_TEXT_COLOR).grid(
+            row=0, column=9, sticky="w"
+        )
+        self.combo_l2 = ctk.CTkComboBox(
+            self,
+            values=loc_vals,
+            state="readonly",
+            width=130,
+        )
+        self.combo_l2.grid(row=1, column=9, padx=(0, 6), sticky="nw")
+        self.combo_l2.set(loc_vals[0])
+        admin.register_location_combo(self.combo_l2)
+
+        ctk.CTkLabel(self, text="Image", text_color=SUBTLE_TEXT_COLOR).grid(
+            row=0, column=10, sticky="w"
         )
         self.img_path = ""
         self.img_lbl = ctk.CTkLabel(
@@ -1402,16 +1741,16 @@ class ActivityRow(ctk.CTkFrame):
             anchor="w",
             justify="left",
         )
-        self.img_lbl.grid(row=1, column=8, padx=(0, 4), sticky="nw")
+        self.img_lbl.grid(row=1, column=10, padx=(0, 4), sticky="nw")
 
         ctk.CTkButton(self, text="Image", width=72, command=self._browse_image).grid(
-            row=1, column=9, padx=(0, 4), sticky="nw"
+            row=1, column=11, padx=(0, 4), sticky="nw"
         )
         ctk.CTkButton(self, text="✕", width=32, command=self._clear_image).grid(
-            row=1, column=10, padx=(0, 4), sticky="nw"
+            row=1, column=12, padx=(0, 4), sticky="nw"
         )
         ctk.CTkButton(self, text="Remove Activity", width=110, command=lambda: self.on_remove(self)).grid(
-            row=1, column=11, padx=(0, 4), sticky="nw"
+            row=1, column=13, padx=(0, 4), sticky="nw"
         )
 
     def _make_time_entry(self, lo: int, hi: int) -> ctk.CTkEntry:
@@ -1485,6 +1824,8 @@ class ActivityRow(ctk.CTkFrame):
             "end": hhmm(eh, em),
             "name_g1": self.combo_g1.get().strip(),
             "name_g2": self.combo_g2.get().strip(),
+            "loc_g1": self.combo_l1.get().strip(),
+            "loc_g2": self.combo_l2.get().strip(),
             "image": self.img_path,
         }
 
@@ -1503,6 +1844,10 @@ class ActivityRow(ctk.CTkFrame):
         combo_vals = ([""] + types) if types else [""]
         self.combo_g1.configure(values=combo_vals)
         self.combo_g2.configure(values=combo_vals)
+        loc_types = self._admin.get_location_types()
+        loc_vals = ([""] + loc_types) if loc_types else [""]
+        self.combo_l1.configure(values=loc_vals)
+        self.combo_l2.configure(values=loc_vals)
 
         def resolve_choice(stored: str) -> str:
             s = (stored or "").strip()
@@ -1519,6 +1864,14 @@ class ActivityRow(ctk.CTkFrame):
 
         self.combo_g1.set(resolve_choice(g1))
         self.combo_g2.set(resolve_choice(g2))
+        l1 = (data.get("loc_g1") or "").strip()
+        l2 = (data.get("loc_g2") or "").strip()
+        if g1 and not l1:
+            l1, _ = infer_locations_from_text(g1)
+        if g2 and not l2:
+            l2, _ = infer_locations_from_text(g2)
+        self.combo_l1.set(l1 if l1 in loc_vals else loc_vals[0])
+        self.combo_l2.set(l2 if l2 in loc_vals else loc_vals[0])
         self.img_path = (data.get("image") or "").strip()
         self._refresh_image_label()
 
@@ -1579,6 +1932,8 @@ class AdminApp(ctk.CTk):
         self._day_sections: Dict[str, DaySection] = {}
         self._activity_types: List[str] = sort_activity_types(list(DEFAULT_ACTIVITY_TYPES))
         self._activity_combos: List[ctk.CTkComboBox] = []
+        self._location_types: List[str] = sort_activity_types(list(DEFAULT_LOCATION_TYPES))
+        self._location_combos: List[ctk.CTkComboBox] = []
         self._qr_code_filename = ""
         self._startup_days_from_file: Optional[Dict[str, Any]] = None
 
@@ -1588,8 +1943,14 @@ class AdminApp(ctk.CTk):
     def get_activity_types(self) -> List[str]:
         return self._activity_types
 
+    def get_location_types(self) -> List[str]:
+        return self._location_types
+
     def register_activity_combo(self, cb: ctk.CTkComboBox) -> None:
         self._activity_combos.append(cb)
+
+    def register_location_combo(self, cb: ctk.CTkComboBox) -> None:
+        self._location_combos.append(cb)
 
     def refresh_all_activity_combos(self) -> None:
         vals = sort_activity_types(self._activity_types)
@@ -1611,6 +1972,27 @@ class AdminApp(ctk.CTk):
             except tk.TclError:
                 continue
         self._activity_combos = alive
+
+    def refresh_all_location_combos(self) -> None:
+        vals = sort_activity_types(self._location_types)
+        combo_vals = ([""] + vals) if vals else [""]
+        alive: List[ctk.CTkComboBox] = []
+        for cb in self._location_combos:
+            try:
+                if not cb.winfo_exists():
+                    continue
+                alive.append(cb)
+                cur = cb.get()
+                cb.configure(values=combo_vals)
+                if cur in combo_vals:
+                    cb.set(cur)
+                elif combo_vals:
+                    cb.set(combo_vals[0])
+                else:
+                    cb.set("")
+            except tk.TclError:
+                continue
+        self._location_combos = alive
 
     def _refresh_manage_activities_list(self) -> None:
         for w in self._manage_list_inner.winfo_children():
@@ -1655,6 +2037,47 @@ class AdminApp(ctk.CTk):
         self._activity_types.remove(name)
         self._refresh_manage_activities_list()
         self.refresh_all_activity_combos()
+
+    def _refresh_manage_locations_list(self) -> None:
+        for w in self._manage_locations_inner.winfo_children():
+            w.destroy()
+        for name in sort_activity_types(self._location_types):
+            row = ctk.CTkFrame(self._manage_locations_inner)
+            row.pack(fill="x", pady=4)
+            ctk.CTkLabel(row, text=name, anchor="w").pack(side="left", fill="x", expand=True, padx=8, pady=6)
+            if name in PROTECTED_LOCATION_TYPES:
+                ctk.CTkLabel(row, text="(protected)", text_color=SUBTLE_TEXT_COLOR).pack(
+                    side="right", padx=8, pady=6
+                )
+            else:
+                ctk.CTkButton(
+                    row,
+                    text="✕",
+                    width=36,
+                    command=lambda n=name: self._remove_location_type(n),
+                ).pack(side="right", padx=6, pady=4)
+
+    def _add_location_type(self) -> None:
+        name = self._new_location_entry.get().strip()
+        if not name:
+            return
+        if name in self._location_types:
+            themed_message(self, "Duplicate", "That location is already in the list.", kind="info")
+            return
+        self._location_types.append(name)
+        self._location_types = sort_activity_types(self._location_types)
+        self._new_location_entry.delete(0, "end")
+        self._refresh_manage_locations_list()
+        self.refresh_all_location_combos()
+
+    def _remove_location_type(self, name: str) -> None:
+        if name in PROTECTED_LOCATION_TYPES:
+            return
+        if name not in self._location_types:
+            return
+        self._location_types.remove(name)
+        self._refresh_manage_locations_list()
+        self.refresh_all_location_combos()
 
     def _build_ui(self) -> None:
         save_bar = ctk.CTkFrame(self, fg_color="transparent")
@@ -1777,6 +2200,23 @@ class AdminApp(ctk.CTk):
         self._manage_list_inner.pack(fill="both", expand=True, padx=4, pady=(0, 12))
         self._refresh_manage_activities_list()
 
+        ctk.CTkFrame(tab_activities, height=1, fg_color=("gray70", "gray35")).pack(fill="x", padx=4, pady=(2, 10))
+
+        ctk.CTkLabel(
+            tab_activities,
+            text="Location types",
+            font=ctk.CTkFont(size=14, weight="bold"),
+        ).pack(anchor="w", padx=4, pady=(0, 6))
+        loc_row = ctk.CTkFrame(tab_activities, fg_color="transparent")
+        loc_row.pack(fill="x", padx=4, pady=(0, 8))
+        self._new_location_entry = ctk.CTkEntry(loc_row, width=320)
+        self._new_location_entry.pack(side="left", padx=(0, 10))
+        ctk.CTkButton(loc_row, text="Add Location Type", width=150, command=self._add_location_type).pack(side="left")
+
+        self._manage_locations_inner = ctk.CTkScrollableFrame(tab_activities, fg_color="transparent", height=170)
+        self._manage_locations_inner.pack(fill="x", padx=4, pady=(0, 12))
+        self._refresh_manage_locations_list()
+
     def _get_config(self) -> Dict[str, Any]:
         return self._collect_config()
 
@@ -1790,6 +2230,7 @@ class AdminApp(ctk.CTk):
             "event_start": start_d.isoformat(),
             "event_end": end_d.isoformat(),
             "activity_types": list(self._activity_types),
+            "location_types": list(self._location_types),
             "qr_code_image": (self._qr_code_filename or "").strip(),
             "days": {},
         }
@@ -1799,6 +2240,7 @@ class AdminApp(ctk.CTk):
 
     def _rebuild_days(self):
         self._activity_combos.clear()
+        self._location_combos.clear()
         for w in self.days_parent.winfo_children():
             w.destroy()
         self._day_sections.clear()
@@ -1827,6 +2269,7 @@ class AdminApp(ctk.CTk):
             self.end_cal.set_date(today)
             self._startup_days_from_file = {}
             self._refresh_manage_activities_list()
+            self._refresh_manage_locations_list()
             self.after_idle(self._finish_heavy_startup)
             return
         try:
@@ -1839,10 +2282,12 @@ class AdminApp(ctk.CTk):
             self.end_cal.set_date(today)
             self._startup_days_from_file = {}
             self._refresh_manage_activities_list()
+            self._refresh_manage_locations_list()
             self.after_idle(self._finish_heavy_startup)
             return
 
         self._activity_types = normalize_activity_types_from_config(data.get("activity_types"))
+        self._location_types = normalize_location_types_from_config(data.get("location_types"))
         self._qr_code_filename = (data.get("qr_code_image") or "").strip()
         self._update_qr_label()
 
@@ -1858,6 +2303,7 @@ class AdminApp(ctk.CTk):
 
         self._startup_days_from_file = data.get("days") or {}
         self._refresh_manage_activities_list()
+        self._refresh_manage_locations_list()
         self.after_idle(self._finish_heavy_startup)
 
     def _finish_heavy_startup(self) -> None:
@@ -1874,6 +2320,7 @@ class AdminApp(ctk.CTk):
                 for a in normalize_day_activities(list(ddata.get("activities") or [])):
                     sec.add_row(a)
         self.refresh_all_activity_combos()
+        self.refresh_all_location_combos()
 
     def _update_qr_label(self) -> None:
         fn = (self._qr_code_filename or "").strip()
@@ -1920,8 +2367,10 @@ class AdminApp(ctk.CTk):
     def _export_html(self) -> None:
         cfg = self._collect_config()
         out_path = os.path.join(app_directory(), HTML_EXPORT_NAME)
+        out_dir = os.path.dirname(out_path)
         try:
-            html = build_event_status_html(cfg)
+            map_name = ensure_export_assets(out_dir, app_directory())
+            html = build_event_status_html(cfg, map_image_name=map_name)
             with open(out_path, "w", encoding="utf-8") as f:
                 f.write(html)
         except OSError as e:

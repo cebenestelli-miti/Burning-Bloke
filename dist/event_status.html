@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Event Now - What's Happening</title>
+  <title>Event Live Status</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       overflow-x: hidden;
-      overflow-y: hidden;
+      overflow-y: auto;
       height: auto;
       min-height: 100%;
       background: transparent;
@@ -129,6 +129,105 @@
     .activity-col {
       line-height: 1.6;
     }
+    .location-chips {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .loc-chip {
+      border: 1px solid #90caf9;
+      background: #e3f2fd;
+      color: #0d47a1;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .loc-chip:hover { background: #bbdefb; }
+    .map-card {
+      margin: 20px 0 48px;
+      background: rgba(255,255,255,0.97);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      overflow: hidden;
+      padding: 14px 12px 16px;
+    }
+    .map-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 12px;
+      justify-content: center;
+    }
+    .map-link {
+      border: 1px solid #ffd180;
+      background: #fff3e0;
+      color: #bf360c;
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 0.82em;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .map-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 767px;
+      margin: 0 auto;
+      line-height: 0;
+    }
+    .map-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .map-target {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 20px;
+      height: 20px;
+      margin-left: -10px;
+      margin-top: -10px;
+      border-radius: 999px;
+      background: #e53935;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 0 rgba(229,57,53,0.8);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 4;
+      transform: scale(0.85);
+    }
+    .map-target.active {
+      opacity: 1;
+      animation: target-pulse 1s ease-out infinite;
+      transform: scale(1);
+    }
+    @keyframes target-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(229,57,53,0.75); }
+      70% { box-shadow: 0 0 0 20px rgba(229,57,53,0); }
+      100% { box-shadow: 0 0 0 0 rgba(229,57,53,0); }
+    }
+    .map-wrap svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .map-wrap a {
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .map-hint {
+      text-align: center;
+      color: #48606f;
+      margin: 10px 0 0;
+      font-size: 0.92em;
+      min-height: 1.2em;
+    }
     .sat { background: rgba(255,242,230,0.9); }
     .sun { background: rgba(240,230,255,0.9); }
     .mon { background: rgba(230,255,251,0.9); }
@@ -173,6 +272,10 @@
       .time-col {
         width: 120px;
       }
+      .map-card {
+        margin: 12px 0 32px;
+        padding: 12px 8px 12px;
+      }
     }
   </style>
 </head>
@@ -187,9 +290,57 @@
 </div>
 
 <h2>Full Schedule</h2>
+<div id="schedule-container"></div>
+
+<div id="map-section" class="map-card">
+  <h2 style="margin: 8px 0 12px;">Site Map</h2>
+  <div id="map-links" class="map-links"></div>
+  <div id="map-wrap" class="map-wrap">
+    <img src="site_map_art_illustrated2.png" width="767" height="1024" alt="Burning Bloke site map"/>
+    <div id="map-target" class="map-target" aria-hidden="true"></div>
+    <svg viewBox="0 0 767 1024" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <a href="#the-barn" aria-label="The Barn"><rect id="zone-the-barn" x="25" y="40" width="275" height="185" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#fire-1" aria-label="Fire"><rect id="zone-fire-1" x="190" y="220" width="205" height="145" rx="16" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#sauna" aria-label="Sauna"><ellipse id="zone-sauna" cx="250" cy="665" rx="85" ry="65" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#watch-tower" aria-label="Watch Tower"><rect id="zone-watch-tower" x="490" y="500" width="170" height="170" rx="14" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#race-track" aria-label="Race Track"><polygon id="zone-race-track" points="405,150 750,150 750,700 465,700 405,640" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#bayside" aria-label="Bayside"><rect id="zone-bayside" x="165" y="740" width="550" height="225" rx="65" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#touch-football" aria-label="Touch Football"><ellipse id="zone-touch-football" cx="380" cy="400" rx="70" ry="70" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#shooting" aria-label="Shooting"><ellipse id="zone-shooting" cx="210" cy="720" rx="72" ry="62" fill="rgba(255,255,255,0.001)"/></a>
+    </svg>
+  </div>
+  <p id="map-status" class="map-hint">Click schedule/location links to target the map.</p>
+</div>
 
 <script>
-const schedule = [{"dateIso": "2026-05-01", "dayLabel": "Friday 01 May", "className": "sat", "blocks": [{"start": "1900", "end": "2359", "activity": "Movies & Poker (Optional - BYO BBQ food, let us know)"}]}, {"dateIso": "2026-05-02", "dayLabel": "Saturday 02 May", "className": "sun", "blocks": [{"start": "0730", "end": "0815", "activity": "Morning Meditation Session"}, {"start": "0900", "end": "1100", "activity": "Swimming & Kayaking"}, {"start": "1200", "end": "1230", "activity": "Lunch, Camp Setup"}, {"start": "1300", "end": "1700", "activity": "Group 1 - Shooting\nGroup 2 - Rally Driving"}, {"start": "1700", "end": "1830", "activity": "Group 1 - Sauna & Icebath\nGroup 2 - Whatever you like"}, {"start": "1830", "end": "2359", "activity": "Dinner & Bloke Burning"}]}, {"dateIso": "2026-05-03", "dayLabel": "Sunday 03 May", "className": "mon", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee"}, {"start": "1000", "end": "1100", "activity": "Touch Football"}, {"start": "1100", "end": "1300", "activity": "Lunch"}, {"start": "1300", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting"}, {"start": "1500", "end": "1830", "activity": "Group 1 - Games - Bocce, Finska\nGroup 2 - Sauna & Icebath"}, {"start": "1830", "end": "2200", "activity": "Dinner, Campfire & Drinks"}]}, {"dateIso": "2026-05-04", "dayLabel": "Monday 04 May", "className": "sat", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee"}, {"start": "0930", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting"}, {"start": "1500", "end": "2359", "activity": "Time Capsule Burying"}]}];
+const schedule = [{"dateIso": "2026-05-01", "dayLabel": "Friday 01 May", "className": "sat", "blocks": [{"start": "1900", "end": "2359", "activity": "Movies & Poker (Optional - BYO BBQ food, let us know)", "location_g1": "The Barn", "location_g2": "The Barn"}]}, {"dateIso": "2026-05-02", "dayLabel": "Saturday 02 May", "className": "sun", "blocks": [{"start": "0730", "end": "0815", "activity": "Morning Meditation Session", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "0900", "end": "1100", "activity": "Swimming & Kayaking", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "1200", "end": "1230", "activity": "Lunch, Camp Setup", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1700", "activity": "Group 1 - Shooting\nGroup 2 - Rally Driving", "location_g1": "Shooting", "location_g2": "Watch Tower"}, {"start": "1700", "end": "1830", "activity": "Group 1 - Sauna & Icebath\nGroup 2 - Whatever you like", "location_g1": "Sauna", "location_g2": ""}, {"start": "1830", "end": "2359", "activity": "Dinner & Bloke Burning", "location_g1": "Fire", "location_g2": "Fire"}]}, {"dateIso": "2026-05-03", "dayLabel": "Sunday 03 May", "className": "mon", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1000", "end": "1100", "activity": "Touch Football", "location_g1": "Touch Football", "location_g2": "Touch Football"}, {"start": "1100", "end": "1300", "activity": "Lunch", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "1830", "activity": "Group 1 - Games - Bocce, Finska\nGroup 2 - Sauna & Icebath", "location_g1": "Shooting", "location_g2": "Sauna"}, {"start": "1830", "end": "2200", "activity": "Dinner, Campfire & Drinks", "location_g1": "Fire", "location_g2": "Fire"}]}, {"dateIso": "2026-05-04", "dayLabel": "Monday 04 May", "className": "sat", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "0930", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "2359", "activity": "Time Capsule Burying", "location_g1": "", "location_g2": ""}]}];
+const locationTypes = ["Bayside", "Fire", "Sauna", "Shooting", "The Barn", "Touch Football", "Watch Tower"];
+const mapTarget = document.getElementById("map-target");
+const mapStatus = document.getElementById("map-status");
+const TARGET_VISIBLE_MS = 5200;
+const targetOverrides = {
+  "fire-1": { xPct: 34.0, yPct: 27.0 },
+  "watch-tower": { xPct: 66.4, yPct: 56.5 },
+  "bayside": { xPct: 63.4, yPct: 71.8 },
+  "touch-football": { xPct: 64.8, yPct: 22.0 },
+  "shooting": { xPct: 24.8, yPct: 70.0 }
+};
+
+function locationToId(name) {
+  const s = (name || "").trim().toLowerCase();
+  const map = {
+    "the barn": "the-barn",
+    "fire": "fire-1",
+    "sauna": "sauna",
+    "watch tower": "watch-tower",
+    "race track": "race-track",
+    "bayside": "bayside",
+    "bay side": "bayside",
+    "touch football": "touch-football",
+    "shooting": "shooting"
+  };
+  return map[s] || "";
+}
 
 function todayIso() {
   const n = new Date();
@@ -265,8 +416,7 @@ function updateDisplay() {
 }
 
 function buildSchedule() {
-  const container = document.createElement("div");
-  container.id = "schedule-container";
+  const container = document.getElementById("schedule-container");
   const today = todayIso();
   const { currentMinutes } = getCurrentLocal();
   schedule.forEach(dayObj => {
@@ -295,17 +445,85 @@ function buildSchedule() {
         else if (currentMinutes >= eMin) row.classList.add("past");
       }
       const act = block.activity.replace(/\n/g, "<br>");
-      row.innerHTML = `
-        <td class="time-col">${fmtHm(block.start)} – ${fmtHm(block.end)}</td>
-        <td class="activity-col">${act}</td>
-      `;
+      const loc1 = (block.location_g1 || "").trim();
+      const loc2 = (block.location_g2 || "").trim();
+      const locSet = [];
+      if (loc1) locSet.push(loc1);
+      if (loc2 && loc2.toLowerCase() !== loc1.toLowerCase()) locSet.push(loc2);
+      let chipsHtml = "";
+      if (locSet.length) {
+        chipsHtml = `<div class="location-chips">` + locSet.map((loc) => {
+          const id = locationToId(loc);
+          if (!id) return "";
+          return `<button type="button" class="loc-chip" data-map-target="${id}">Location: ${loc}</button>`;
+        }).join("") + `</div>`;
+      }
+      row.innerHTML = `<td class="time-col">${fmtHm(block.start)} – ${fmtHm(block.end)}</td><td class="activity-col">${act}${chipsHtml}</td>`;
       tbody.appendChild(row);
     });
     table.appendChild(tbody);
     section.appendChild(table);
     container.appendChild(section);
   });
-  document.body.appendChild(container);
+  container.addEventListener("click", (event) => {
+    const btn = event.target && event.target.closest ? event.target.closest(".loc-chip") : null;
+    if (!btn) return;
+    const targetId = btn.getAttribute("data-map-target") || "";
+    if (targetId) {
+      focusMapLocation(targetId, btn.textContent.replace("Location: ", "").trim());
+    }
+  });
+}
+
+function buildLocationLinks() {
+  const wrap = document.getElementById("map-links");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  locationTypes.forEach((loc) => {
+    const id = locationToId(loc);
+    if (!id) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "map-link";
+    b.textContent = loc;
+    b.addEventListener("click", () => focusMapLocation(id, loc));
+    wrap.appendChild(b);
+  });
+}
+
+function focusMapLocation(id, label) {
+  const mapSection = document.getElementById("map-section");
+  const zone = document.getElementById("zone-" + id);
+  location.hash = id;
+  mapSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  setTimeout(() => {
+    if (!zone || !mapTarget) return;
+    const override = targetOverrides[id];
+    const box = zone.getBBox();
+    const cx = override ? override.xPct : ((box.x + box.width / 2) / 767) * 100;
+    const cy = override ? override.yPct : ((box.y + box.height / 2) / 1024) * 100;
+    mapTarget.style.left = `${cx}%`;
+    mapTarget.style.top = `${cy}%`;
+    mapTarget.classList.remove("active");
+    void mapTarget.offsetWidth;
+    mapTarget.classList.add("active");
+    setTimeout(() => mapTarget.classList.remove("active"), TARGET_VISIBLE_MS);
+  }, 450);
+  mapStatus.textContent = `Targeted: ${label}`;
+  notifyParentHeight();
+}
+
+function bindMapClicks() {
+  document.querySelectorAll("#map-wrap svg a").forEach((anchor) => {
+    anchor.addEventListener("click", (event) => {
+      event.preventDefault();
+      const href = anchor.getAttribute("href") || "";
+      if (!href.startsWith("#")) return;
+      const id = href.slice(1);
+      const label = (anchor.getAttribute("aria-label") || id).trim();
+      focusMapLocation(id, label);
+    });
+  });
 }
 
 function notifyParentHeight() {
@@ -321,6 +539,8 @@ function notifyParentHeight() {
 }
 
 buildSchedule();
+buildLocationLinks();
+bindMapClicks();
 updateDisplay();
 setInterval(updateDisplay, 60000);
 notifyParentHeight();

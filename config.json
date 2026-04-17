@@ -23,6 +23,15 @@
     "Touch Football",
     "Whatever you like"
   ],
+  "location_types": [
+    "Bayside",
+    "Fire",
+    "Sauna",
+    "Shooting",
+    "The Barn",
+    "Touch Football",
+    "Watch Tower"
+  ],
   "qr_code_image": "",
   "days": {
     "2026-05-01": {
@@ -32,6 +41,8 @@
           "end": "23:59",
           "name_g1": "Movies & Poker (Optional - BYO BBQ food, let us know)",
           "name_g2": "Movies & Poker (Optional - BYO BBQ food, let us know)",
+          "loc_g1": "The Barn",
+          "loc_g2": "The Barn",
           "image": ""
         }
       ]
@@ -43,6 +54,8 @@
           "end": "08:15",
           "name_g1": "Morning Meditation Session",
           "name_g2": "Morning Meditation Session",
+          "loc_g1": "Bayside",
+          "loc_g2": "Bayside",
           "image": ""
         },
         {
@@ -50,6 +63,8 @@
           "end": "11:00",
           "name_g1": "Swimming & Kayaking",
           "name_g2": "Swimming & Kayaking",
+          "loc_g1": "Bayside",
+          "loc_g2": "Bayside",
           "image": ""
         },
         {
@@ -57,6 +72,8 @@
           "end": "12:30",
           "name_g1": "Lunch, Camp Setup",
           "name_g2": "Lunch, Camp Setup",
+          "loc_g1": "The Barn",
+          "loc_g2": "The Barn",
           "image": ""
         },
         {
@@ -64,6 +81,8 @@
           "end": "17:00",
           "name_g1": "Shooting",
           "name_g2": "Rally Driving",
+          "loc_g1": "Shooting",
+          "loc_g2": "Watch Tower",
           "image": ""
         },
         {
@@ -71,6 +90,8 @@
           "end": "18:30",
           "name_g1": "Sauna & Icebath",
           "name_g2": "Whatever you like",
+          "loc_g1": "Sauna",
+          "loc_g2": "",
           "image": ""
         },
         {
@@ -78,6 +99,8 @@
           "end": "23:59",
           "name_g1": "Dinner & Bloke Burning",
           "name_g2": "Dinner & Bloke Burning",
+          "loc_g1": "Fire",
+          "loc_g2": "Fire",
           "image": ""
         }
       ]
@@ -89,6 +112,8 @@
           "end": "08:30",
           "name_g1": "Morning Meditation Session",
           "name_g2": "Morning Meditation Session",
+          "loc_g1": "Bayside",
+          "loc_g2": "Bayside",
           "image": ""
         },
         {
@@ -96,6 +121,8 @@
           "end": "09:30",
           "name_g1": "Breakfast & Coffee",
           "name_g2": "Breakfast & Coffee",
+          "loc_g1": "The Barn",
+          "loc_g2": "The Barn",
           "image": ""
         },
         {
@@ -103,6 +130,8 @@
           "end": "11:00",
           "name_g1": "Touch Football",
           "name_g2": "Touch Football",
+          "loc_g1": "Touch Football",
+          "loc_g2": "Touch Football",
           "image": ""
         },
         {
@@ -110,6 +139,8 @@
           "end": "13:00",
           "name_g1": "Lunch",
           "name_g2": "Lunch",
+          "loc_g1": "The Barn",
+          "loc_g2": "The Barn",
           "image": ""
         },
         {
@@ -117,6 +148,8 @@
           "end": "15:00",
           "name_g1": "Rally Driving",
           "name_g2": "Shooting",
+          "loc_g1": "Watch Tower",
+          "loc_g2": "Shooting",
           "image": ""
         },
         {
@@ -124,6 +157,8 @@
           "end": "18:30",
           "name_g1": "Games - Bocce, Finska",
           "name_g2": "Sauna & Icebath",
+          "loc_g1": "Shooting",
+          "loc_g2": "Sauna",
           "image": ""
         },
         {
@@ -131,6 +166,8 @@
           "end": "22:00",
           "name_g1": "Dinner, Campfire & Drinks",
           "name_g2": "Dinner, Campfire & Drinks",
+          "loc_g1": "Fire",
+          "loc_g2": "Fire",
           "image": ""
         }
       ]
@@ -142,6 +179,8 @@
           "end": "08:30",
           "name_g1": "Morning Meditation Session",
           "name_g2": "Morning Meditation Session",
+          "loc_g1": "Bayside",
+          "loc_g2": "Bayside",
           "image": ""
         },
         {
@@ -149,6 +188,8 @@
           "end": "09:30",
           "name_g1": "Breakfast & Coffee",
           "name_g2": "Breakfast & Coffee",
+          "loc_g1": "The Barn",
+          "loc_g2": "The Barn",
           "image": ""
         },
         {
@@ -156,6 +197,8 @@
           "end": "15:00",
           "name_g1": "Rally Driving",
           "name_g2": "Shooting",
+          "loc_g1": "Watch Tower",
+          "loc_g2": "Shooting",
           "image": ""
         },
         {
@@ -163,6 +206,8 @@
           "end": "23:59",
           "name_g1": "Time Capsule Burying",
           "name_g2": "Time Capsule Burying",
+          "loc_g1": "",
+          "loc_g2": "",
           "image": ""
         }
       ]

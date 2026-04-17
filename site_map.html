@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Burning Bloke site map</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #fff;
+      color: #37474f;
+      font-family: system-ui, Segoe UI, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 12px 24px;
+    }
+    h1 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 10px;
+      color: #546e7a;
+    }
+    figure.map {
+      position: relative;
+      width: min(92vw, 767px);
+      max-width: 100%;
+      margin: 0;
+      line-height: 0;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    }
+    figure.map img {
+      width: 100%;
+      height: auto;
+      display: block;
+      vertical-align: top;
+    }
+    figure.map svg.overlay {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    figure.map svg.overlay a {
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    figure.map svg.overlay a:focus {
+      outline: none;
+    }
+    figure.map svg.overlay a:focus-visible polygon,
+    figure.map svg.overlay a:focus-visible rect,
+    figure.map svg.overlay a:focus-visible ellipse {
+      stroke: #1565c0;
+      stroke-width: 3;
+      fill: rgba(21, 101, 192, 0.12);
+    }
+    #status {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #607d8b;
+      min-height: 1.2em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Site map</h1>
+  <figure class="map" aria-label="Property map with clickable areas">
+    <img src="site_map_art_illustrated2.png" width="767" height="1024" alt="Burning Bloke property map: barn, fire, sauna, race track, bayside"/>
+    <svg class="overlay" viewBox="0 0 767 1024" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <a href="#race-track" aria-label="Race track">
+        <polygon points="405,150 750,150 750,700 460,700 405,640" fill="rgba(255,255,255,0.001)"/>
+      </a>
+      <a href="#bayside" aria-label="Bayside">
+        <rect x="170" y="740" width="550" height="220" rx="60" fill="rgba(255,255,255,0.001)"/>
+      </a>
+      <a href="#fire-1" aria-label="Fire 1">
+        <rect x="190" y="215" width="205" height="140" rx="18" fill="rgba(255,255,255,0.001)"/>
+      </a>
+      <a href="#sauna" aria-label="Sauna">
+        <ellipse cx="255" cy="665" rx="80" ry="58" fill="rgba(255,255,255,0.001)"/>
+      </a>
+      <a href="#the-barn" aria-label="The Barn">
+        <rect x="0" y="0" width="340" height="172" fill="rgba(255,255,255,0.001)"/>
+      </a>
+    </svg>
+  </figure>
+  <p id="status">Tap a region (hash updates for wiring).</p>
+  <script>
+    function sync() {
+      document.getElementById("status").textContent =
+        location.hash ? "Selected: " + location.hash : "Tap a region (hash updates for wiring).";
+    }
+    window.addEventListener("hashchange", sync);
+    sync();
+  </script>
+</body>
+</html>
