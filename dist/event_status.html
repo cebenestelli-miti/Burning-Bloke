@@ -312,14 +312,15 @@
       <a href="#bayside" aria-label="Bayside"><rect id="zone-bayside" x="165" y="740" width="550" height="225" rx="65" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#touch-football" aria-label="Touch Football"><ellipse id="zone-touch-football" cx="380" cy="400" rx="70" ry="70" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#shooting" aria-label="Shooting"><ellipse id="zone-shooting" cx="210" cy="720" rx="72" ry="62" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#dam-forest" aria-label="Dam Forest"><rect id="zone-dam-forest" x="22" y="805" width="132" height="205" rx="28" fill="rgba(255,255,255,0.001)"/></a>
     </svg>
   </div>
   <p id="map-status" class="map-hint">Click schedule/location links to target the map.</p>
 </div>
 
 <script>
-const schedule = [{"dateIso": "2026-05-01", "dayLabel": "Friday 01 May", "className": "sat", "blocks": [{"start": "1900", "end": "2359", "activity": "Movies & Poker (Optional - BYO BBQ food, let us know)", "location_g1": "The Barn", "location_g2": "The Barn"}]}, {"dateIso": "2026-05-02", "dayLabel": "Saturday 02 May", "className": "sun", "blocks": [{"start": "0730", "end": "0815", "activity": "Morning Meditation Session", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "0900", "end": "1100", "activity": "Swimming & Kayaking", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "1200", "end": "1230", "activity": "Lunch, Camp Setup", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1700", "activity": "Group 1 - Shooting\nGroup 2 - Rally Driving", "location_g1": "Shooting", "location_g2": "Watch Tower"}, {"start": "1700", "end": "1830", "activity": "Group 1 - Sauna & Icebath\nGroup 2 - Whatever you like", "location_g1": "Sauna", "location_g2": ""}, {"start": "1830", "end": "2359", "activity": "Dinner & Bloke Burning", "location_g1": "Fire", "location_g2": "Fire"}]}, {"dateIso": "2026-05-03", "dayLabel": "Sunday 03 May", "className": "mon", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1000", "end": "1100", "activity": "Touch Football", "location_g1": "Touch Football", "location_g2": "Touch Football"}, {"start": "1100", "end": "1300", "activity": "Lunch", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "1830", "activity": "Group 1 - Games - Bocce, Finska\nGroup 2 - Sauna & Icebath", "location_g1": "Shooting", "location_g2": "Sauna"}, {"start": "1830", "end": "2200", "activity": "Dinner, Campfire & Drinks", "location_g1": "Fire", "location_g2": "Fire"}]}, {"dateIso": "2026-05-04", "dayLabel": "Monday 04 May", "className": "sat", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "0930", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "2359", "activity": "Time Capsule Burying", "location_g1": "", "location_g2": ""}]}];
-const locationTypes = ["Bayside", "Fire", "Sauna", "Shooting", "The Barn", "Touch Football", "Watch Tower"];
+const schedule = [{"dateIso": "2026-05-01", "dayLabel": "Friday 01 May", "className": "sat", "blocks": [{"start": "1900", "end": "2359", "activity": "Movies & Poker (Optional - BYO BBQ food, let us know)", "location_g1": "The Barn", "location_g2": "The Barn"}]}, {"dateIso": "2026-05-02", "dayLabel": "Saturday 02 May", "className": "sun", "blocks": [{"start": "0730", "end": "0815", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0900", "end": "1100", "activity": "Swimming & Kayaking", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "1200", "end": "1230", "activity": "Lunch, Camp Setup", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1700", "activity": "Group 1 - Shooting\nGroup 2 - Rally Driving", "location_g1": "Shooting", "location_g2": "Watch Tower"}, {"start": "1700", "end": "1830", "activity": "Group 1 - Sauna & Icebath\nGroup 2 - Whatever you like", "location_g1": "Sauna", "location_g2": ""}, {"start": "1830", "end": "2359", "activity": "Dinner, Campfire & Drinks", "location_g1": "Fire", "location_g2": "Fire"}]}, {"dateIso": "2026-05-03", "dayLabel": "Sunday 03 May", "className": "mon", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1000", "end": "1100", "activity": "Touch Football", "location_g1": "Touch Football", "location_g2": "Touch Football"}, {"start": "1100", "end": "1300", "activity": "Lunch", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "1830", "activity": "Group 1 - Games - Bocce, Finska\nGroup 2 - Sauna & Icebath", "location_g1": "Shooting", "location_g2": "Sauna"}, {"start": "1830", "end": "2200", "activity": "Dinner & Bloke Burning", "location_g1": "Fire", "location_g2": "Fire"}]}, {"dateIso": "2026-05-04", "dayLabel": "Monday 04 May", "className": "sat", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "0930", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "2359", "activity": "Time Capsule Burying", "location_g1": "", "location_g2": ""}]}];
+const locationTypes = ["Bayside", "Dam Forest", "Fire", "Sauna", "Shooting", "The Barn", "Touch Football", "Watch Tower"];
 const mapTarget = document.getElementById("map-target");
 const mapStatus = document.getElementById("map-status");
 const TARGET_VISIBLE_MS = 5200;
@@ -328,7 +329,8 @@ const targetOverrides = {
   "watch-tower": { xPct: 66.4, yPct: 56.5 },
   "bayside": { xPct: 63.4, yPct: 71.8 },
   "touch-football": { xPct: 64.8, yPct: 22.0 },
-  "shooting": { xPct: 24.8, yPct: 70.0 }
+  "shooting": { xPct: 24.8, yPct: 70.0 },
+  "dam-forest": { xPct: 11.9, yPct: 88.4 }
 };
 
 function locationToId(name) {
@@ -342,7 +344,8 @@ function locationToId(name) {
     "bayside": "bayside",
     "bay side": "bayside",
     "touch football": "touch-football",
-    "shooting": "shooting"
+    "shooting": "shooting",
+    "dam forest": "dam-forest"
   };
   return map[s] || "";
 }

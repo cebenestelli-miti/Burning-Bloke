@@ -25,6 +25,7 @@
   ],
   "location_types": [
     "Bayside",
+    "Dam Forest",
     "Fire",
     "Sauna",
     "Shooting",
@@ -54,8 +55,8 @@
           "end": "08:15",
           "name_g1": "Morning Meditation Session",
           "name_g2": "Morning Meditation Session",
-          "loc_g1": "Bayside",
-          "loc_g2": "Bayside",
+          "loc_g1": "Dam Forest",
+          "loc_g2": "Dam Forest",
           "image": ""
         },
         {
@@ -97,8 +98,8 @@
         {
           "start": "18:30",
           "end": "23:59",
-          "name_g1": "Dinner & Bloke Burning",
-          "name_g2": "Dinner & Bloke Burning",
+          "name_g1": "Dinner, Campfire & Drinks",
+          "name_g2": "Dinner, Campfire & Drinks",
           "loc_g1": "Fire",
           "loc_g2": "Fire",
           "image": ""
@@ -112,8 +113,8 @@
           "end": "08:30",
           "name_g1": "Morning Meditation Session",
           "name_g2": "Morning Meditation Session",
-          "loc_g1": "Bayside",
-          "loc_g2": "Bayside",
+          "loc_g1": "Dam Forest",
+          "loc_g2": "Dam Forest",
           "image": ""
         },
         {
@@ -164,8 +165,8 @@
         {
           "start": "18:30",
           "end": "22:00",
-          "name_g1": "Dinner, Campfire & Drinks",
-          "name_g2": "Dinner, Campfire & Drinks",
+          "name_g1": "Dinner & Bloke Burning",
+          "name_g2": "Dinner & Bloke Burning",
           "loc_g1": "Fire",
           "loc_g2": "Fire",
           "image": ""
@@ -179,8 +180,8 @@
           "end": "08:30",
           "name_g1": "Morning Meditation Session",
           "name_g2": "Morning Meditation Session",
-          "loc_g1": "Bayside",
-          "loc_g2": "Bayside",
+          "loc_g1": "Dam Forest",
+          "loc_g2": "Dam Forest",
           "image": ""
         },
         {

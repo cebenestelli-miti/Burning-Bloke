@@ -64,6 +64,7 @@ DEFAULT_LOCATION_TYPES = [
     "Sauna",
     "Watch Tower",
     "Bayside",
+    "Dam Forest",
     "Touch Football",
     "Shooting",
 ]
@@ -396,8 +397,10 @@ def infer_locations_from_text(text: str) -> Tuple[str, str]:
     loc2 = ""
     if "breakfast" in s:
         loc1 = "The Barn"
-    if "kayaking" in s or "meditation" in s:
+    if "kayaking" in s:
         loc1 = "Bayside"
+    if "meditation" in s:
+        loc1 = "Dam Forest"
     if "sauna" in s or "ice bath" in s or "icebath" in s:
         loc1 = "Sauna"
     if "rally driving" in s:
@@ -926,6 +929,7 @@ def build_event_status_html(cfg: Dict[str, Any], map_image_name: str = "site_map
       <a href="#bayside" aria-label="Bayside"><rect id="zone-bayside" x="165" y="740" width="550" height="225" rx="65" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#touch-football" aria-label="Touch Football"><ellipse id="zone-touch-football" cx="380" cy="400" rx="70" ry="70" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#shooting" aria-label="Shooting"><ellipse id="zone-shooting" cx="210" cy="720" rx="72" ry="62" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#dam-forest" aria-label="Dam Forest"><rect id="zone-dam-forest" x="22" y="805" width="132" height="205" rx="28" fill="rgba(255,255,255,0.001)"/></a>
     </svg>
   </div>
   <p id="map-status" class="map-hint">Click schedule/location links to target the map.</p>
@@ -942,7 +946,8 @@ const targetOverrides = {{
   "watch-tower": {{ xPct: 66.4, yPct: 56.5 }},
   "bayside": {{ xPct: 63.4, yPct: 71.8 }},
   "touch-football": {{ xPct: 64.8, yPct: 22.0 }},
-  "shooting": {{ xPct: 24.8, yPct: 70.0 }}
+  "shooting": {{ xPct: 24.8, yPct: 70.0 }},
+  "dam-forest": {{ xPct: 11.9, yPct: 88.4 }}
 }};
 
 function locationToId(name) {{
@@ -956,7 +961,8 @@ function locationToId(name) {{
     "bayside": "bayside",
     "bay side": "bayside",
     "touch football": "touch-football",
-    "shooting": "shooting"
+    "shooting": "shooting",
+    "dam forest": "dam-forest"
   }};
   return map[s] || "";
 }}
