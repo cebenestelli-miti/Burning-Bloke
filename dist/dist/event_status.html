@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Event Live Status</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      height: auto;
+      min-height: 100%;
+      background: transparent;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    html::-webkit-scrollbar, body::-webkit-scrollbar {
+      display: none;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 900px;
+      margin: 24px auto;
+      padding: 0 20px;
+      color: #333;
+      min-height: auto;
+    }
+
+    body::before {
+      content: none;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+    }
+    h2 {
+      text-align: center;
+      font-size: 2em;
+      margin: 50px 0 30px;
+      color: #fff;
+      border-bottom: 2px solid rgba(255,255,255,0.2);
+      padding-bottom: 10px;
+      text-shadow: 0 1px 6px rgba(0,0,0,0.6);
+    }
+    #current {
+      background: rgba(230, 247, 255, 0.94);
+      border: 3px solid #1890ff;
+      border-radius: 12px;
+      padding: 40px 25px;
+      margin-bottom: 50px;
+      text-align: center;
+      font-size: 2.4em;
+      line-height: 1.4;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      backdrop-filter: blur(4px);
+    }
+    #time {
+      font-size: 1.6em;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #0050b3;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    #status strong {
+      color: #d4380d;
+      display: block;
+      margin: 12px 0 8px;
+    }
+    #next-info {
+      font-size: 0.825em;
+      color: #d46b08;
+      font-weight: 500;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #91d5ff88;
+      display: none;
+    }
+    #next-info.visible {
+      display: block;
+    }
+    .day-section {
+      margin-bottom: 50px;
+      background: rgba(255, 255, 255, 0.97);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      backdrop-filter: blur(3px);
+    }
+    .day-header {
+      font-size: 1.6em;
+      font-weight: bold;
+      text-align: center;
+      background: #444;
+      color: white;
+      padding: 20px;
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+    }
+    .day-header::after {
+      content: "▼";
+      position: absolute;
+      right: 30px;
+      font-size: 1.2em;
+      transition: transform 0.25s ease;
+    }
+    .day-header.expanded::after {
+      transform: rotate(180deg);
+    }
+    .day-header:hover { background: #555; }
+    table.day-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: inherit;
+    }
+    td {
+      border: 1px solid #ddd8;
+      padding: 16px 20px;
+      vertical-align: top;
+    }
+    tr:hover td { background: rgba(248,249,250,0.6); }
+    .time-col {
+      width: 160px;
+      font-weight: 600;
+      color: #444;
+      white-space: nowrap;
+    }
+    .activity-col {
+      line-height: 1.6;
+    }
+    .location-chips {
+      margin-top: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .loc-chip {
+      border: 1px solid #90caf9;
+      background: #e3f2fd;
+      color: #0d47a1;
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .loc-chip:hover { background: #bbdefb; }
+    .map-card {
+      margin: 20px 0 48px;
+      background: rgba(255,255,255,0.97);
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      overflow: hidden;
+      padding: 14px 12px 16px;
+    }
+    .map-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 8px 0 12px;
+      justify-content: center;
+    }
+    .map-link {
+      border: 1px solid #ffd180;
+      background: #fff3e0;
+      color: #bf360c;
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-size: 0.82em;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .map-wrap {
+      position: relative;
+      width: 100%;
+      max-width: 767px;
+      margin: 0 auto;
+      line-height: 0;
+    }
+    .map-wrap img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .map-target {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 20px;
+      height: 20px;
+      margin-left: -10px;
+      margin-top: -10px;
+      border-radius: 999px;
+      background: #e53935;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 0 rgba(229,57,53,0.8);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 4;
+      transform: scale(0.85);
+    }
+    .map-target.active {
+      opacity: 1;
+      animation: target-pulse 1s ease-out infinite;
+      transform: scale(1);
+    }
+    @keyframes target-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(229,57,53,0.75); }
+      70% { box-shadow: 0 0 0 20px rgba(229,57,53,0); }
+      100% { box-shadow: 0 0 0 0 rgba(229,57,53,0); }
+    }
+    .map-wrap svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+    .map-wrap a {
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .barn-popover {
+      position: absolute;
+      z-index: 6;
+      left: calc((25 / 767) * 100% + 6px);
+      top: calc((40 / 1024) * 100% + 6px);
+      right: auto;
+      bottom: auto;
+      max-width: 220px;
+      padding: 10px 12px 12px;
+      background: #fffef8;
+      border: 1px solid #e0c896;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+      font-size: 0.88rem;
+      line-height: 1.35;
+      color: #3e2723;
+      pointer-events: auto;
+      text-align: left;
+    }
+    .barn-popover__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #f0e0c0;
+    }
+    .barn-popover__head strong {
+      font-size: 0.95rem;
+      color: #5d4037;
+    }
+    .barn-popover__close {
+      border: none;
+      background: transparent;
+      color: #795548;
+      font-size: 1.35rem;
+      line-height: 1;
+      padding: 0 4px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .barn-popover__close:hover {
+      background: rgba(121,85,72,0.12);
+      color: #3e2723;
+    }
+    .barn-popover__list {
+      margin: 0;
+      padding-left: 1.25em;
+      list-style: disc;
+      list-style-position: outside;
+    }
+    .barn-popover__list li {
+      margin: 0.25em 0;
+      display: list-item;
+    }
+    .lap-times-popover {
+      position: absolute;
+      z-index: 6;
+      top: 50%;
+      right: 10px;
+      bottom: auto;
+      transform: translateY(-50%);
+      width: 148px;
+      max-width: 42%;
+      max-height: calc(100% - 20px);
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 8px 10px 10px;
+      background: rgba(255, 253, 250, 0.97);
+      border: 1px solid #b0bec5;
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+      font-size: 0.78rem;
+      line-height: 1.25;
+      color: #263238;
+      pointer-events: auto;
+      text-align: left;
+      overflow: hidden;
+    }
+    .lap-times-popover[hidden] {
+      display: none !important;
+    }
+    .lap-times-popover__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      flex-shrink: 0;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #cfd8dc;
+    }
+    .lap-times-popover__head strong {
+      font-size: 0.82rem;
+      color: #37474f;
+    }
+    .lap-times-popover__close {
+      border: none;
+      background: transparent;
+      color: #546e7a;
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 0 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .lap-times-popover__close:hover {
+      background: rgba(84,110,122,0.12);
+    }
+    .lap-times-popover__body {
+      flex: 0 1 auto;
+      overflow-y: auto;
+      min-height: 0;
+      max-height: min(55vh, 360px);
+    }
+    .lap-times-popover__row {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 4px 0;
+      border-bottom: 1px solid #eceff1;
+    }
+    .lap-times-popover__row:last-child {
+      border-bottom: none;
+    }
+    .lap-times-popover__name {
+      font-weight: 700;
+      max-width: 52%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .lap-times-popover__lap {
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      flex: 1;
+      min-width: 0;
+      word-break: break-all;
+    }
+    .lap-times-popover__empty {
+      color: #78909c;
+      font-style: italic;
+      padding: 6px 0;
+    }
+    .map-hint {
+      text-align: center;
+      color: #48606f;
+      margin: 10px 0 0;
+      font-size: 0.92em;
+      min-height: 1.2em;
+    }
+    .map-hint--generated {
+      margin-top: 4px;
+      margin-bottom: 0;
+      font-size: 0.8em;
+      opacity: 0.92;
+    }
+    #map-card-title {
+      scroll-margin-top: 12px;
+    }
+    .sat { background: rgba(255,242,230,0.9); }
+    .sun { background: rgba(240,230,255,0.9); }
+    .mon { background: rgba(230,255,251,0.9); }
+    .past { color: #888; opacity: 0.75; }
+    .current { background: rgba(217,243,190,0.9) !important; font-weight: bold; }
+
+    @media (max-width: 640px) {
+      body {
+        margin: 14px auto;
+        padding: 0 10px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+      h2 {
+        font-size: 1.6em;
+        margin: 30px 0 18px;
+      }
+      #current {
+        padding: 22px 14px;
+        font-size: 1.75em;
+        line-height: 1.3;
+      }
+      #time {
+        font-size: 1.35em;
+        line-height: 1.15;
+        margin-bottom: 14px;
+      }
+      #status strong {
+        margin: 8px 0 6px;
+      }
+      .day-header {
+        font-size: 1.25em;
+        padding: 14px 16px;
+      }
+      .day-header::after {
+        right: 14px;
+      }
+      td {
+        padding: 12px 10px;
+      }
+      .time-col {
+        width: 120px;
+      }
+      .map-card {
+        margin: 12px 0 32px;
+        padding: 12px 8px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h1>Event Live Status</h1>
+
+<div id="current">
+  <div id="time"></div>
+  <div id="status">Loading schedule...</div>
+  <div id="next-info"></div>
+</div>
+
+<h2>Full Schedule</h2>
+<div id="schedule-container"></div>
+
+<div id="map-section" class="map-card">
+  <h2 id="map-card-title" style="margin: 8px 0 12px;">Site Map</h2>
+  <div id="map-links" class="map-links"></div>
+  <div id="map-wrap" class="map-wrap">
+    <img src="Map/BB map3.png" width="1536" height="2048" alt="Burning Bloke site map"/>
+    <div id="map-target" class="map-target" aria-hidden="true"></div>
+    <svg viewBox="0 0 767 1024" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <a href="#the-barn" aria-label="The Barn"><rect id="zone-the-barn" x="25" y="40" width="220" height="185" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#fire-top" aria-label="Fire Top"><rect id="zone-fire-top" x="178" y="220" width="205" height="145" rx="16" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#sauna" aria-label="Sauna"><ellipse id="zone-sauna" cx="124" cy="648" rx="72" ry="58" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#dam-forest" aria-label="Dam Forest"><rect id="zone-dam-forest" x="406" y="792" width="155" height="208" rx="26" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#bayside" aria-label="Bayside"><rect id="zone-bayside" x="158" y="740" width="552" height="225" rx="65" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#shooting" aria-label="Shooting"><ellipse id="zone-shooting" cx="210" cy="720" rx="72" ry="62" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#fire-bottom" aria-label="Fire Bottom"><ellipse id="zone-fire-bottom" cx="268" cy="654" rx="52" ry="46" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#watch-tower" aria-label="Watch Tower"><rect id="zone-watch-tower" x="450" y="436" width="164" height="164" rx="14" fill="rgba(255,255,255,0.001)"/></a>
+    </svg>
+    <div id="barn-popover" class="barn-popover" hidden role="dialog" aria-modal="true" aria-labelledby="barn-popover-title">
+      <div class="barn-popover__head">
+        <strong id="barn-popover-title">The Barn</strong>
+        <button type="button" class="barn-popover__close" aria-label="Close">&times;</button>
+      </div>
+      <ul class="barn-popover__list">
+        <li>Toilets</li>
+        <li>Shower</li>
+        <li>Kitchen</li>
+        <li>Movies</li>
+      </ul>
+    </div>
+    <div id="lap-times-popover" class="lap-times-popover" hidden role="dialog" aria-modal="true" aria-labelledby="lap-times-popover-title">
+      <div class="lap-times-popover__head">
+        <strong id="lap-times-popover-title">Lap times</strong>
+        <button type="button" class="lap-times-popover__close" aria-label="Close">&times;</button>
+      </div>
+      <div id="lap-times-popover-body" class="lap-times-popover__body"></div>
+    </div>
+  </div>
+  <p id="map-status" class="map-hint">Click schedule/location links to target the map.</p>
+  <p id="map-generated" class="map-hint map-hint--generated">HTML generated 18 Apr 2026, 01:25 PM (E. Australia Standard Time)</p>
+</div>
+
+<script>
+const schedule = [{"dateIso": "2026-05-01", "dayLabel": "Friday 01 May", "className": "sat", "blocks": [{"start": "1900", "end": "2359", "activity": "Movies & Poker (Optional - BYO BBQ food, let us know)", "location_g1": "The Barn", "location_g2": "The Barn"}]}, {"dateIso": "2026-05-02", "dayLabel": "Saturday 02 May", "className": "sun", "blocks": [{"start": "0730", "end": "0815", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0900", "end": "1100", "activity": "Swimming & Kayaking", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "1200", "end": "1230", "activity": "Lunch, Camp Setup", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1700", "activity": "Group 1 - Shooting\nGroup 2 - Rally Driving", "location_g1": "Shooting", "location_g2": "Watch Tower"}, {"start": "1700", "end": "1830", "activity": "Group 1 - Sauna & Icebath\nGroup 2 - Whatever you like", "location_g1": "Sauna", "location_g2": ""}, {"start": "1830", "end": "2359", "activity": "Dinner, Campfire & Drinks", "location_g1": "Fire Top", "location_g2": "Fire Top"}]}, {"dateIso": "2026-05-03", "dayLabel": "Sunday 03 May", "className": "mon", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1000", "end": "1100", "activity": "Touch Football", "location_g1": "Touch Football", "location_g2": "Touch Football"}, {"start": "1100", "end": "1300", "activity": "Lunch", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "1830", "activity": "Group 1 - Games - Bocce, Finska\nGroup 2 - Sauna & Icebath", "location_g1": "Shooting", "location_g2": "Sauna"}, {"start": "1830", "end": "2200", "activity": "Dinner & Bloke Burning", "location_g1": "Fire Bottom", "location_g2": "Fire Bottom"}]}, {"dateIso": "2026-05-04", "dayLabel": "Monday 04 May", "className": "sat", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "0930", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "2359", "activity": "Time Capsule Burying", "location_g1": "", "location_g2": ""}]}];
+const locationTypes = ["Bayside", "Dam Forest", "Fire Bottom", "Fire Top", "Sauna", "Shooting", "The Barn", "Touch Football", "Watch Tower"];
+const lapTimes = [{"name": "Kdog", "lap": "58"}];
+const mapTarget = document.getElementById("map-target");
+const mapStatus = document.getElementById("map-status");
+const TARGET_VISIBLE_MS = 5200;
+const targetOverrides = {
+  "the-barn": { xPct: 17.6, yPct: 17.5 },
+  "fire-top": { xPct: 32.6, yPct: 27.0 },
+  "fire-bottom": { xPct: 34.9, yPct: 63.9 },
+  "watch-tower": { xPct: 68.8, yPct: 53.8 },
+  "bayside": { xPct: 60.2, yPct: 71.8 },
+  "shooting": { xPct: 24.8, yPct: 70.0 },
+  "sauna": { xPct: 16.2, yPct: 63.3 },
+  "dam-forest": { xPct: 63.0, yPct: 86.0 }
+};
+
+function locationToId(name) {
+  const s = (name || "").trim().toLowerCase().replace(/\s+/g, " ");
+  const map = {
+    "the barn": "the-barn",
+    "fire": "fire-top",
+    "fire top": "fire-top",
+    "fire bottom": "fire-bottom",
+    "fire-bottom": "fire-bottom",
+    "sauna": "sauna",
+    "watch tower": "watch-tower",
+    "bayside": "bayside",
+    "bay side": "bayside",
+    "shooting": "shooting",
+    "dam forest": "dam-forest"
+  };
+  return map[s] || "";
+}
+
+function todayIso() {
+  const n = new Date();
+  const y = n.getFullYear();
+  const m = String(n.getMonth() + 1).padStart(2, "0");
+  const d = String(n.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function toMinutes(timeStr) {
+  const hh = parseInt(timeStr.slice(0, 2), 10);
+  const mm = parseInt(timeStr.slice(2, 4), 10);
+  return hh * 60 + mm;
+}
+
+function fmtHm(timeStr) {
+  return timeStr.slice(0, 2) + ":" + timeStr.slice(2, 4);
+}
+
+function getCurrentLocal() {
+  const n = new Date();
+  const wd = n.toLocaleDateString("en-US", { weekday: "long" });
+  const hh = n.getHours();
+  const mm = n.getMinutes();
+  return {
+    dateIso: todayIso(),
+    dayOfWeek: wd,
+    currentMinutes: hh * 60 + mm,
+    timeStr: `${wd} ${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`
+  };
+}
+
+function getCurrentAndNext() {
+  const { dateIso, currentMinutes } = getCurrentLocal();
+  const daySchedule = schedule.find(s => s.dateIso === dateIso);
+  if (!daySchedule) {
+    return { statusHtml: "No event scheduled today", nextText: "" };
+  }
+  let current = null;
+  let nextBlock = null;
+  for (const block of daySchedule.blocks) {
+    const s = toMinutes(block.start);
+    const e = toMinutes(block.end);
+    if (currentMinutes >= s && currentMinutes < e) {
+      current = block.activity;
+    }
+    if (currentMinutes < s && (!nextBlock || s < toMinutes(nextBlock.start))) {
+      nextBlock = block;
+    }
+  }
+  let statusHtml = current
+    ? `Currently:<br><strong>${current.replace(/\n/g, "<br>")}</strong>`
+    : "No activity right now";
+  let nextText = "";
+  if (nextBlock) {
+    nextText = `Next: ${nextBlock.activity.split("\n")[0].trim()} — ${fmtHm(nextBlock.start)}–${fmtHm(nextBlock.end)}`;
+  }
+  return { statusHtml, nextText };
+}
+
+function updateDisplay() {
+  const { timeStr } = getCurrentLocal();
+  const { statusHtml, nextText } = getCurrentAndNext();
+  document.getElementById("time").textContent = timeStr;
+  document.getElementById("status").innerHTML = statusHtml;
+  const nextEl = document.getElementById("next-info");
+  if (nextText) {
+    nextEl.textContent = nextText;
+    nextEl.classList.add("visible");
+  } else {
+    nextEl.classList.remove("visible");
+  }
+}
+
+function buildSchedule() {
+  const container = document.getElementById("schedule-container");
+  const today = todayIso();
+  const { currentMinutes } = getCurrentLocal();
+  schedule.forEach(dayObj => {
+    const section = document.createElement("div");
+    section.className = "day-section";
+    const header = document.createElement("div");
+    header.className = "day-header expanded";
+    header.textContent = dayObj.dayLabel;
+    header.addEventListener("click", () => {
+      const table = section.querySelector("table");
+      const isHidden = table.style.display === "none";
+      table.style.display = isHidden ? "" : "none";
+      header.classList.toggle("expanded", isHidden);
+    });
+    section.appendChild(header);
+    const table = document.createElement("table");
+    table.className = "day-table";
+    const tbody = document.createElement("tbody");
+    dayObj.blocks.forEach(block => {
+      const row = document.createElement("tr");
+      row.classList.add(dayObj.className);
+      const sMin = toMinutes(block.start);
+      const eMin = toMinutes(block.end);
+      if (dayObj.dateIso === today) {
+        if (currentMinutes >= sMin && currentMinutes < eMin) row.classList.add("current");
+        else if (currentMinutes >= eMin) row.classList.add("past");
+      }
+      const act = block.activity.replace(/\n/g, "<br>");
+      const loc1 = (block.location_g1 || "").trim();
+      const loc2 = (block.location_g2 || "").trim();
+      const locSet = [];
+      if (loc1) locSet.push(loc1);
+      if (loc2 && loc2.toLowerCase() !== loc1.toLowerCase()) locSet.push(loc2);
+      let chipsHtml = "";
+      if (locSet.length) {
+        chipsHtml = `<div class="location-chips">` + locSet.map((loc) => {
+          const id = locationToId(loc);
+          if (!id) return "";
+          return `<button type="button" class="loc-chip" data-map-target="${id}">Location: ${loc}</button>`;
+        }).join("") + `</div>`;
+      }
+      row.innerHTML = `<td class="time-col">${fmtHm(block.start)} – ${fmtHm(block.end)}</td><td class="activity-col">${act}${chipsHtml}</td>`;
+      tbody.appendChild(row);
+    });
+    table.appendChild(tbody);
+    section.appendChild(table);
+    container.appendChild(section);
+  });
+  container.addEventListener("click", (event) => {
+    const btn = event.target && event.target.closest ? event.target.closest(".loc-chip") : null;
+    if (!btn) return;
+    const targetId = btn.getAttribute("data-map-target") || "";
+    if (targetId) {
+      focusMapLocation(targetId, btn.textContent.replace("Location: ", "").trim());
+    }
+  });
+}
+
+function buildLocationLinks() {
+  const wrap = document.getElementById("map-links");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  locationTypes.forEach((loc) => {
+    const id = locationToId(loc);
+    if (!id) return;
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "map-link";
+    b.textContent = loc;
+    b.addEventListener("click", () => {
+      focusMapLocation(id, loc);
+    });
+    wrap.appendChild(b);
+  });
+}
+
+/** Visible viewport height (handles mobile URL bar / iframe). */
+function viewportHeightPx() {
+  if (window.visualViewport && window.visualViewport.height) return window.visualViewport.height;
+  return window.innerHeight || 0;
+}
+
+function scrollMainDocumentToElement(el, block) {
+  if (!el) return;
+  const b = block || "center";
+  const step = () => {
+    try {
+      const ae = document.activeElement;
+      if (ae && typeof ae.blur === "function") ae.blur();
+    } catch (_x) {}
+    const se = document.scrollingElement || document.documentElement;
+    const r = el.getBoundingClientRect();
+    const y0 = window.pageYOffset || se.scrollTop || 0;
+    const mq =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("(max-width: 768px), (pointer: coarse)")
+        : null;
+    const preferInstant = mq && mq.matches;
+    const behavior = preferInstant ? "auto" : "smooth";
+
+    if (b === "start") {
+      try {
+        el.scrollIntoView({ block: "start", inline: "nearest", behavior: behavior });
+      } catch (_e) {
+        const pad = 8;
+        const top = Math.max(0, r.top + y0 - pad);
+        try {
+          se.scrollTo({ left: 0, top: top, behavior: "auto" });
+        } catch (_e2) {
+          try {
+            window.scrollTo(0, top);
+          } catch (_e3) {
+            se.scrollTop = top;
+          }
+        }
+      }
+      return;
+    }
+
+    const vh = viewportHeightPx();
+    if (!vh) return;
+    let top;
+    const mid = r.top + y0 + r.height / 2;
+    top = mid - vh / 2;
+    const overshootPx = Math.min(80, Math.max(24, Math.round(vh * 0.05)));
+    top -= overshootPx;
+    top = Math.max(0, top);
+    const apply = (beh) => {
+      try {
+        se.scrollTo({ left: 0, top: top, behavior: beh });
+      } catch (_e) {
+        try {
+          window.scrollTo(0, top);
+        } catch (_e2) {
+          se.scrollTop = top;
+        }
+      }
+    };
+    apply(behavior);
+    if (!preferInstant) {
+      setTimeout(() => {
+        const y1 = window.pageYOffset || se.scrollTop || 0;
+        if (Math.abs(y1 - top) > 56) apply("auto");
+      }, 160);
+    }
+  };
+  requestAnimationFrame(() => requestAnimationFrame(step));
+}
+
+/**
+ * When this page is in an iframe (e.g. Squarespace), the *host* page scrolls — not the iframe's window.
+ * Standalone scroll uses scrollMainDocumentToElement; embeds need the parent to listen for this message.
+ * Parent listens for postMessage type bb-schedule-scroll-to-map (mapMidY, mapTop, iframeViewportH, scrollMode).
+ */
+function notifyParentScrollToMap(el, scrollMode) {
+  if (!el) return;
+  let embedded = false;
+  try {
+    embedded = window.self !== window.top;
+  } catch (_e) {
+    embedded = true;
+  }
+  if (!embedded) return;
+  const measure = () => {
+    try {
+      const se = document.scrollingElement || document.documentElement;
+      const r = el.getBoundingClientRect();
+      const y0 = window.pageYOffset || se.scrollTop || 0;
+      const mapTop = r.top + y0;
+      const mapMidY = mapTop + r.height / 2;
+      window.parent.postMessage(
+        {
+          type: "bb-schedule-scroll-to-map",
+          mapMidY: mapMidY,
+          mapTop: mapTop,
+          iframeViewportH: viewportHeightPx() || window.innerHeight || 0,
+          scrollMode: scrollMode || "titleAtTop",
+        },
+        "*"
+      );
+    } catch (_e) {}
+  };
+  requestAnimationFrame(() => requestAnimationFrame(measure));
+}
+
+function focusMapLocation(id, label) {
+  const mapSection = document.getElementById("map-section");
+  const mapScrollEl = document.getElementById("map-card-title") || mapSection;
+  const zone = document.getElementById("zone-" + id);
+  scrollMainDocumentToElement(mapScrollEl, "start");
+  notifyParentScrollToMap(mapScrollEl, "titleAtTop");
+  setTimeout(() => notifyParentScrollToMap(mapScrollEl, "titleAtTop"), 120);
+  setTimeout(() => notifyParentScrollToMap(mapScrollEl, "titleAtTop"), 450);
+  setTimeout(() => {
+    if (!zone || !mapTarget) return;
+    const override = targetOverrides[id];
+    const box = zone.getBBox();
+    const cx = override ? override.xPct : ((box.x + box.width / 2) / 767) * 100;
+    const cy = override ? override.yPct : ((box.y + box.height / 2) / 1024) * 100;
+    mapTarget.style.left = `${cx}%`;
+    mapTarget.style.top = `${cy}%`;
+    mapTarget.classList.remove("active");
+    void mapTarget.offsetWidth;
+    mapTarget.classList.add("active");
+    setTimeout(() => mapTarget.classList.remove("active"), TARGET_VISIBLE_MS);
+  }, 450);
+  mapStatus.textContent = `Targeted: ${label}`;
+  try {
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, "", "#" + id);
+    }
+  } catch (_e) {}
+  notifyParentHeight();
+  setTimeout(() => notifyParentScrollToMap(mapScrollEl, "titleAtTop"), 220);
+}
+
+function hideLapTimesPopover() {
+  const el = document.getElementById("lap-times-popover");
+  if (el) el.hidden = true;
+  if (window._lapPopoverOutside) {
+    document.removeEventListener("click", window._lapPopoverOutside, true);
+    window._lapPopoverOutside = null;
+  }
+  notifyParentHeight();
+}
+
+function lapTimeSortKey(raw) {
+  const s = (raw == null ? "" : String(raw)).trim();
+  if (!s) return Number.POSITIVE_INFINITY;
+  const colon = s.match(/^(\d+):(\d+(?:\.\d+)?)$/);
+  if (colon) {
+    return parseInt(colon[1], 10) * 60 + parseFloat(colon[2]);
+  }
+  const num = parseFloat(s.replace(/,/g, "."));
+  if (!Number.isNaN(num)) return num;
+  return Number.POSITIVE_INFINITY;
+}
+
+function lapStrOf(r) {
+  return r && r.lap != null ? String(r.lap) : r && r.lap_time != null ? String(r.lap_time) : "";
+}
+
+/** Popover display: omit leading 0: when minutes are zero (e.g. 0:58 → 58). */
+function formatLapForPopoverDisplay(raw) {
+  const s = (raw == null ? "" : String(raw)).trim();
+  if (!s) return "";
+  const colon = s.match(/^(\d+):(\d+(?:\.\d+)?)$/);
+  if (colon) {
+    const m = parseInt(colon[1], 10);
+    const sec = colon[2];
+    if (m === 0) return sec;
+    return `${m}:${sec}`;
+  }
+  return s;
+}
+
+function renderLapTimesPopoverBody() {
+  const body = document.getElementById("lap-times-popover-body");
+  if (!body) return;
+  const rows = Array.isArray(lapTimes) ? lapTimes.slice() : [];
+  if (!rows.length) {
+    body.innerHTML = '<p class="lap-times-popover__empty">No laps yet.</p>';
+    return;
+  }
+  rows.sort((a, b) => {
+    const ka = lapTimeSortKey(lapStrOf(a));
+    const kb = lapTimeSortKey(lapStrOf(b));
+    if (ka !== kb) return ka - kb;
+    const na = a && a.name != null ? String(a.name) : "";
+    const nb = b && b.name != null ? String(b.name) : "";
+    return na.localeCompare(nb);
+  });
+  body.innerHTML = rows
+    .map((r) => {
+      const n = r && r.name != null ? String(r.name) : "";
+      const t = lapStrOf(r);
+      const tDisp = formatLapForPopoverDisplay(t);
+      const ne = n.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+      const te = tDisp.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+      return `<div class="lap-times-popover__row"><span class="lap-times-popover__name">${ne}</span><span class="lap-times-popover__lap">${te}</span></div>`;
+    })
+    .join("");
+}
+
+function showLapTimesPopover() {
+  hideLapTimesPopover();
+  hideBarnPopover();
+  const el = document.getElementById("lap-times-popover");
+  if (!el) return;
+  renderLapTimesPopoverBody();
+  el.hidden = false;
+  notifyParentHeight();
+  window._lapPopoverOutside = function (ev) {
+    if (el.contains(ev.target)) return;
+    hideLapTimesPopover();
+  };
+  setTimeout(function () {
+    document.addEventListener("click", window._lapPopoverOutside, true);
+  }, 0);
+}
+
+function hideBarnPopover() {
+  const el = document.getElementById("barn-popover");
+  if (el) el.hidden = true;
+  if (window._barnPopoverOutside) {
+    document.removeEventListener("click", window._barnPopoverOutside, true);
+    window._barnPopoverOutside = null;
+  }
+  notifyParentHeight();
+}
+
+function showBarnPopover() {
+  hideLapTimesPopover();
+  hideBarnPopover();
+  const el = document.getElementById("barn-popover");
+  if (!el) return;
+  el.hidden = false;
+  notifyParentHeight();
+  window._barnPopoverOutside = function (ev) {
+    if (el.contains(ev.target)) return;
+    hideBarnPopover();
+  };
+  setTimeout(function () {
+    document.addEventListener("click", window._barnPopoverOutside, true);
+  }, 0);
+}
+
+function wireBarnPopoverUi() {
+  const btn = document.querySelector("#barn-popover .barn-popover__close");
+  if (btn && !btn.dataset.wired) {
+    btn.dataset.wired = "1";
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      hideBarnPopover();
+    });
+  }
+}
+
+function wireLapTimesPopoverUi() {
+  const btn = document.querySelector("#lap-times-popover .lap-times-popover__close");
+  if (btn && !btn.dataset.wired) {
+    btn.dataset.wired = "1";
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      hideLapTimesPopover();
+    });
+  }
+}
+
+function wireMapPopoverEscape() {
+  if (window._mapPopoverEscWired) return;
+  window._mapPopoverEscWired = true;
+  document.addEventListener(
+    "keydown",
+    function (ev) {
+      if (ev.key !== "Escape") return;
+      hideBarnPopover();
+    },
+    true
+  );
+}
+
+function bindMapClicks() {
+  document.querySelectorAll("#map-wrap svg a").forEach((anchor) => {
+    anchor.addEventListener("click", (event) => {
+      event.preventDefault();
+      const href = anchor.getAttribute("href") || "";
+      if (!href.startsWith("#")) return;
+      const id = href.slice(1);
+      const label = (anchor.getAttribute("aria-label") || id).trim();
+      if (id === "the-barn") showBarnPopover();
+      if (id === "watch-tower") showLapTimesPopover();
+      focusMapLocation(id, label);
+    });
+  });
+}
+
+function notifyParentHeight() {
+  const h = Math.max(
+    document.body.scrollHeight,
+    document.documentElement.scrollHeight,
+    document.body.offsetHeight,
+    document.documentElement.offsetHeight
+  );
+  try {
+    window.parent.postMessage({ type: "bb-schedule-height", height: h }, "*");
+  } catch (_e) {}
+}
+
+function bindHeightObservers() {
+  const mapImg = document.querySelector("#map-wrap img");
+  if (mapImg) {
+    if (mapImg.complete) {
+      notifyParentHeight();
+    } else {
+      mapImg.addEventListener("load", notifyParentHeight, { once: true });
+      mapImg.addEventListener("error", notifyParentHeight, { once: true });
+    }
+  }
+  if (typeof ResizeObserver !== "undefined") {
+    try {
+      const ro = new ResizeObserver(() => notifyParentHeight());
+      ro.observe(document.body);
+      ro.observe(document.documentElement);
+    } catch (_e) {}
+  }
+  window.addEventListener("load", notifyParentHeight);
+}
+
+buildSchedule();
+buildLocationLinks();
+wireBarnPopoverUi();
+wireLapTimesPopoverUi();
+wireMapPopoverEscape();
+bindMapClicks();
+bindHeightObservers();
+updateDisplay();
+setInterval(updateDisplay, 60000);
+notifyParentHeight();
+setTimeout(notifyParentHeight, 50);
+setTimeout(notifyParentHeight, 400);
+window.addEventListener("resize", notifyParentHeight);
+</script>
+</body>
+</html>
