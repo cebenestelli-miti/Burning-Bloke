@@ -651,6 +651,7 @@ def build_event_status_html(
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta http-equiv="Cache-Control" content="max-age=0, must-revalidate" />
   <title>Event Live Status</title>
   <style>
     html, body {{
