@@ -2488,12 +2488,12 @@ class LapTimeEditorRow(ctk.CTkFrame):
         self._admin = admin
         self._name_e = ctk.CTkEntry(self, width=120, placeholder_text="Name")
         self._min_e = ctk.CTkEntry(self, width=56, placeholder_text="Min")
-        self._sec_e = ctk.CTkEntry(self, width=100, placeholder_text="Sec")
+        # ~4 digits (e.g. 59.9); keep compact — no horizontal stretch
+        self._sec_e = ctk.CTkEntry(self, width=62, placeholder_text="Sec")
         self._name_e.grid(row=0, column=0, padx=(0, 10), pady=3, sticky="w")
         self._min_e.grid(row=0, column=1, padx=(0, 4), pady=3, sticky="w")
         ctk.CTkLabel(self, text=":", text_color=SUBTLE_TEXT_COLOR, width=10).grid(row=0, column=2, pady=3)
-        self._sec_e.grid(row=0, column=3, padx=(0, 10), pady=3, sticky="ew")
-        self.grid_columnconfigure(3, weight=1)
+        self._sec_e.grid(row=0, column=3, padx=(0, 10), pady=3, sticky="w")
         ctk.CTkButton(self, text="✕", width=32, command=lambda: on_remove(self)).grid(row=0, column=4, pady=3)
         self._name_e.bind("<KeyRelease>", self._on_name_change)
         self._name_e.bind("<FocusOut>", self._on_any_change)
@@ -2948,7 +2948,21 @@ class AdminApp(ctk.CTk):
             text_color=SUBTLE_TEXT_COLOR,
             wraplength=640,
             justify="left",
-        ).pack(anchor="w", padx=4, pady=(0, 8))
+        ).pack(anchor="w", padx=4, pady=(0, 6))
+        lap_hdr = ctk.CTkFrame(tab_laps, fg_color="transparent")
+        lap_hdr.pack(fill="x", padx=4, pady=(0, 2))
+        _lap_hdr_font = ctk.CTkFont(size=12, weight="bold")
+        ctk.CTkLabel(lap_hdr, text="Name", font=_lap_hdr_font, width=120, anchor="w").grid(
+            row=0, column=0, padx=(0, 10), sticky="w"
+        )
+        ctk.CTkLabel(lap_hdr, text="Min", font=_lap_hdr_font, width=56, anchor="w").grid(
+            row=0, column=1, padx=(0, 4), sticky="w"
+        )
+        ctk.CTkLabel(lap_hdr, text="", width=10).grid(row=0, column=2)
+        ctk.CTkLabel(lap_hdr, text="Sec", font=_lap_hdr_font, width=62, anchor="w").grid(
+            row=0, column=3, padx=(0, 10), sticky="w"
+        )
+        ctk.CTkLabel(lap_hdr, text="", width=32).grid(row=0, column=4)
         self._lap_scroll = ctk.CTkScrollableFrame(tab_laps, fg_color="transparent")
         self._lap_scroll.pack(fill="both", expand=True, padx=4, pady=(0, 6))
         ctk.CTkButton(tab_laps, text="+ Add lap", width=120, command=self._add_lap_editor_row).pack(anchor="w", padx=4, pady=(0, 4))
