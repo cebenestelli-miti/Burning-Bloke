@@ -26,7 +26,8 @@
   "location_types": [
     "Bayside",
     "Dam Forest",
-    "Fire",
+    "Fire Bottom",
+    "Fire Top",
     "Sauna",
     "Shooting",
     "The Barn",
@@ -100,8 +101,8 @@
           "end": "23:59",
           "name_g1": "Dinner, Campfire & Drinks",
           "name_g2": "Dinner, Campfire & Drinks",
-          "loc_g1": "Fire",
-          "loc_g2": "Fire",
+          "loc_g1": "Fire Top",
+          "loc_g2": "Fire Top",
           "image": ""
         }
       ]
@@ -167,8 +168,8 @@
           "end": "22:00",
           "name_g1": "Dinner & Bloke Burning",
           "name_g2": "Dinner & Bloke Burning",
-          "loc_g1": "Fire",
-          "loc_g2": "Fire",
+          "loc_g1": "Fire Top",
+          "loc_g2": "Fire Top",
           "image": ""
         }
       ]

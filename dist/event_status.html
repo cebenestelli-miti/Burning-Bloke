@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta http-equiv="Cache-Control" content="max-age=0, must-revalidate" />
   <title>Event Live Status</title>
   <style>
     html, body {
@@ -315,7 +314,7 @@
     <div id="map-target" class="map-target" aria-hidden="true"></div>
     <svg viewBox="0 0 767 1024" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       <a href="#the-barn" aria-label="The Barn"><rect id="zone-the-barn" x="25" y="40" width="275" height="185" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#fire-1" aria-label="Fire"><rect id="zone-fire-1" x="178" y="220" width="205" height="145" rx="16" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#fire-top" aria-label="Fire Top"><rect id="zone-fire-top" x="178" y="220" width="205" height="145" rx="16" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#sauna" aria-label="Sauna"><ellipse id="zone-sauna" cx="124" cy="648" rx="72" ry="58" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#watch-tower" aria-label="Watch Tower"><rect id="zone-watch-tower" x="514" y="472" width="170" height="170" rx="14" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#race-track" aria-label="Race Track"><polygon id="zone-race-track" points="405,150 750,150 750,700 465,700 405,640" fill="rgba(255,255,255,0.001)"/></a>
@@ -323,20 +322,22 @@
       <a href="#bayside" aria-label="Bayside"><rect id="zone-bayside" x="158" y="740" width="552" height="225" rx="65" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#touch-football" aria-label="Touch Football"><ellipse id="zone-touch-football" cx="380" cy="400" rx="70" ry="70" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#shooting" aria-label="Shooting"><ellipse id="zone-shooting" cx="210" cy="720" rx="72" ry="62" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#fire-bottom" aria-label="Fire Bottom"><ellipse id="zone-fire-bottom" cx="268" cy="654" rx="52" ry="46" fill="rgba(255,255,255,0.001)"/></a>
     </svg>
   </div>
   <p id="map-status" class="map-hint">Click schedule/location links to target the map.</p>
-  <p id="map-generated" class="map-hint map-hint--generated">HTML generated 18 Apr 2026, 10:12 AM (E. Australia Standard Time)</p>
+  <p id="map-generated" class="map-hint map-hint--generated">HTML generated 18 Apr 2026, 10:42 AM (E. Australia Standard Time)</p>
 </div>
 
 <script>
-const schedule = [{"dateIso": "2026-05-01", "dayLabel": "Friday 01 May", "className": "sat", "blocks": [{"start": "1900", "end": "2359", "activity": "Movies & Poker (Optional - BYO BBQ food, let us know)", "location_g1": "The Barn", "location_g2": "The Barn"}]}, {"dateIso": "2026-05-02", "dayLabel": "Saturday 02 May", "className": "sun", "blocks": [{"start": "0730", "end": "0815", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0900", "end": "1100", "activity": "Swimming & Kayaking", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "1200", "end": "1230", "activity": "Lunch, Camp Setup", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1700", "activity": "Group 1 - Shooting\nGroup 2 - Rally Driving", "location_g1": "Shooting", "location_g2": "Watch Tower"}, {"start": "1700", "end": "1830", "activity": "Group 1 - Sauna & Icebath\nGroup 2 - Whatever you like", "location_g1": "Sauna", "location_g2": ""}, {"start": "1830", "end": "2359", "activity": "Dinner, Campfire & Drinks", "location_g1": "Fire", "location_g2": "Fire"}]}, {"dateIso": "2026-05-03", "dayLabel": "Sunday 03 May", "className": "mon", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1000", "end": "1100", "activity": "Touch Football", "location_g1": "Touch Football", "location_g2": "Touch Football"}, {"start": "1100", "end": "1300", "activity": "Lunch", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "1830", "activity": "Group 1 - Games - Bocce, Finska\nGroup 2 - Sauna & Icebath", "location_g1": "Shooting", "location_g2": "Sauna"}, {"start": "1830", "end": "2200", "activity": "Dinner & Bloke Burning", "location_g1": "Fire", "location_g2": "Fire"}]}, {"dateIso": "2026-05-04", "dayLabel": "Monday 04 May", "className": "sat", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "0930", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "2359", "activity": "Time Capsule Burying", "location_g1": "", "location_g2": ""}]}];
-const locationTypes = ["Bayside", "Dam Forest", "Fire", "Sauna", "Shooting", "The Barn", "Touch Football", "Watch Tower"];
+const schedule = [{"dateIso": "2026-05-01", "dayLabel": "Friday 01 May", "className": "sat", "blocks": [{"start": "1900", "end": "2359", "activity": "Movies & Poker (Optional - BYO BBQ food, let us know)", "location_g1": "The Barn", "location_g2": "The Barn"}]}, {"dateIso": "2026-05-02", "dayLabel": "Saturday 02 May", "className": "sun", "blocks": [{"start": "0730", "end": "0815", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0900", "end": "1100", "activity": "Swimming & Kayaking", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "1200", "end": "1230", "activity": "Lunch, Camp Setup", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1700", "activity": "Group 1 - Shooting\nGroup 2 - Rally Driving", "location_g1": "Shooting", "location_g2": "Watch Tower"}, {"start": "1700", "end": "1830", "activity": "Group 1 - Sauna & Icebath\nGroup 2 - Whatever you like", "location_g1": "Sauna", "location_g2": ""}, {"start": "1830", "end": "2359", "activity": "Dinner, Campfire & Drinks", "location_g1": "Fire Top", "location_g2": "Fire Top"}]}, {"dateIso": "2026-05-03", "dayLabel": "Sunday 03 May", "className": "mon", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1000", "end": "1100", "activity": "Touch Football", "location_g1": "Touch Football", "location_g2": "Touch Football"}, {"start": "1100", "end": "1300", "activity": "Lunch", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "1830", "activity": "Group 1 - Games - Bocce, Finska\nGroup 2 - Sauna & Icebath", "location_g1": "Shooting", "location_g2": "Sauna"}, {"start": "1830", "end": "2200", "activity": "Dinner & Bloke Burning", "location_g1": "Fire Top", "location_g2": "Fire Top"}]}, {"dateIso": "2026-05-04", "dayLabel": "Monday 04 May", "className": "sat", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "0930", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "2359", "activity": "Time Capsule Burying", "location_g1": "", "location_g2": ""}]}];
+const locationTypes = ["Bayside", "Dam Forest", "Fire Bottom", "Fire Top", "Sauna", "Shooting", "The Barn", "Touch Football", "Watch Tower"];
 const mapTarget = document.getElementById("map-target");
 const mapStatus = document.getElementById("map-status");
 const TARGET_VISIBLE_MS = 5200;
 const targetOverrides = {
-  "fire-1": { xPct: 32.6, yPct: 27.0 },
+  "fire-top": { xPct: 32.6, yPct: 27.0 },
+  "fire-bottom": { xPct: 34.9, yPct: 63.9 },
   "watch-tower": { xPct: 68.8, yPct: 53.8 },
   "bayside": { xPct: 60.2, yPct: 71.8 },
   "touch-football": { xPct: 64.8, yPct: 22.0 },
@@ -349,7 +350,9 @@ function locationToId(name) {
   const s = (name || "").trim().toLowerCase();
   const map = {
     "the barn": "the-barn",
-    "fire": "fire-1",
+    "fire": "fire-top",
+    "fire top": "fire-top",
+    "fire bottom": "fire-bottom",
     "sauna": "sauna",
     "watch tower": "watch-tower",
     "race track": "race-track",

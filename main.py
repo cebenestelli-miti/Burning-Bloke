@@ -61,7 +61,8 @@ PROTECTED_ACTIVITY_TYPES: frozenset[str] = frozenset(DEFAULT_ACTIVITY_TYPES)
 
 DEFAULT_LOCATION_TYPES = [
     "The Barn",
-    "Fire",
+    "Fire Top",
+    "Fire Bottom",
     "Sauna",
     "Watch Tower",
     "Bayside",
@@ -319,6 +320,8 @@ def normalize_location_types_from_config(raw: Any) -> List[str]:
     seen = set(result)
     for x in raw:
         s = str(x).strip()
+        if s == "Fire":
+            s = "Fire Top"
         if s and s not in seen:
             result.append(s)
             seen.add(s)
@@ -408,7 +411,7 @@ def infer_locations_from_text(text: str) -> Tuple[str, str]:
     if "rally driving" in s:
         loc1 = "Watch Tower"
     if "campfire" in s or "bloke burning" in s:
-        loc1 = "Fire"
+        loc1 = "Fire Top"
     if "touch football" in s:
         loc1 = "Touch Football"
     if "shooting" in s:
@@ -651,7 +654,6 @@ def build_event_status_html(
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta http-equiv="Cache-Control" content="max-age=0, must-revalidate" />
   <title>Event Live Status</title>
   <style>
     html, body {{
@@ -963,7 +965,7 @@ def build_event_status_html(
     <div id="map-target" class="map-target" aria-hidden="true"></div>
     <svg viewBox="0 0 767 1024" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
       <a href="#the-barn" aria-label="The Barn"><rect id="zone-the-barn" x="25" y="40" width="275" height="185" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#fire-1" aria-label="Fire"><rect id="zone-fire-1" x="178" y="220" width="205" height="145" rx="16" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#fire-top" aria-label="Fire Top"><rect id="zone-fire-top" x="178" y="220" width="205" height="145" rx="16" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#sauna" aria-label="Sauna"><ellipse id="zone-sauna" cx="124" cy="648" rx="72" ry="58" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#watch-tower" aria-label="Watch Tower"><rect id="zone-watch-tower" x="514" y="472" width="170" height="170" rx="14" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#race-track" aria-label="Race Track"><polygon id="zone-race-track" points="405,150 750,150 750,700 465,700 405,640" fill="rgba(255,255,255,0.001)"/></a>
@@ -971,6 +973,7 @@ def build_event_status_html(
       <a href="#bayside" aria-label="Bayside"><rect id="zone-bayside" x="158" y="740" width="552" height="225" rx="65" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#touch-football" aria-label="Touch Football"><ellipse id="zone-touch-football" cx="380" cy="400" rx="70" ry="70" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#shooting" aria-label="Shooting"><ellipse id="zone-shooting" cx="210" cy="720" rx="72" ry="62" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#fire-bottom" aria-label="Fire Bottom"><ellipse id="zone-fire-bottom" cx="268" cy="654" rx="52" ry="46" fill="rgba(255,255,255,0.001)"/></a>
     </svg>
   </div>
   <p id="map-status" class="map-hint">Click schedule/location links to target the map.</p>
@@ -984,7 +987,8 @@ const mapTarget = document.getElementById("map-target");
 const mapStatus = document.getElementById("map-status");
 const TARGET_VISIBLE_MS = 5200;
 const targetOverrides = {{
-  "fire-1": {{ xPct: 32.6, yPct: 27.0 }},
+  "fire-top": {{ xPct: 32.6, yPct: 27.0 }},
+  "fire-bottom": {{ xPct: 34.9, yPct: 63.9 }},
   "watch-tower": {{ xPct: 68.8, yPct: 53.8 }},
   "bayside": {{ xPct: 60.2, yPct: 71.8 }},
   "touch-football": {{ xPct: 64.8, yPct: 22.0 }},
@@ -997,7 +1001,9 @@ function locationToId(name) {{
   const s = (name || "").trim().toLowerCase();
   const map = {{
     "the barn": "the-barn",
-    "fire": "fire-1",
+    "fire": "fire-top",
+    "fire top": "fire-top",
+    "fire bottom": "fire-bottom",
     "sauna": "sauna",
     "watch tower": "watch-tower",
     "race track": "race-track",
@@ -2063,6 +2069,10 @@ class ActivityRow(ctk.CTkFrame):
             l1, _ = infer_locations_from_text(g1)
         if g2 and not l2:
             l2, _ = infer_locations_from_text(g2)
+        if l1 == "Fire":
+            l1 = "Fire Top"
+        if l2 == "Fire":
+            l2 = "Fire Top"
         self.combo_l1.set(l1 if l1 in loc_vals else loc_vals[0])
         self.combo_l2.set(l2 if l2 in loc_vals else loc_vals[0])
         self.img_path = (data.get("image") or "").strip()
