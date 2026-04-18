@@ -887,6 +887,9 @@ def build_event_status_html(
       font-size: 0.8em;
       opacity: 0.92;
     }}
+    #map-card-title {{
+      scroll-margin-top: 12px;
+    }}
     .sat {{ background: rgba(255,242,230,0.9); }}
     .sun {{ background: rgba(240,230,255,0.9); }}
     .mon {{ background: rgba(230,255,251,0.9); }}
@@ -1172,27 +1175,40 @@ function scrollMainDocumentToElement(el, block) {{
     const se = document.scrollingElement || document.documentElement;
     const r = el.getBoundingClientRect();
     const y0 = window.pageYOffset || se.scrollTop || 0;
-    const vh = viewportHeightPx();
-    if (!vh) return;
-    let top;
-    if (b === "start") {{
-      const vv = window.visualViewport;
-      const vTop = vv && typeof vv.offsetTop === "number" ? vv.offsetTop : 0;
-      const pad = 10;
-      top = r.top + y0 - vTop - pad;
-    }} else {{
-      const mid = r.top + y0 + r.height / 2;
-      top = mid - vh / 2;
-      const overshootPx = Math.min(80, Math.max(24, Math.round(vh * 0.05)));
-      top -= overshootPx;
-    }}
-    top = Math.max(0, top);
     const mq =
       typeof window.matchMedia === "function"
         ? window.matchMedia("(max-width: 768px), (pointer: coarse)")
         : null;
     const preferInstant = mq && mq.matches;
     const behavior = preferInstant ? "auto" : "smooth";
+
+    if (b === "start") {{
+      try {{
+        el.scrollIntoView({{ block: "start", inline: "nearest", behavior: behavior }});
+      }} catch (_e) {{
+        const pad = 8;
+        const top = Math.max(0, r.top + y0 - pad);
+        try {{
+          se.scrollTo({{ left: 0, top: top, behavior: "auto" }});
+        }} catch (_e2) {{
+          try {{
+            window.scrollTo(0, top);
+          }} catch (_e3) {{
+            se.scrollTop = top;
+          }}
+        }}
+      }}
+      return;
+    }}
+
+    const vh = viewportHeightPx();
+    if (!vh) return;
+    let top;
+    const mid = r.top + y0 + r.height / 2;
+    top = mid - vh / 2;
+    const overshootPx = Math.min(80, Math.max(24, Math.round(vh * 0.05)));
+    top -= overshootPx;
+    top = Math.max(0, top);
     const apply = (beh) => {{
       try {{
         se.scrollTo({{ left: 0, top: top, behavior: beh }});
