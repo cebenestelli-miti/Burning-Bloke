@@ -376,6 +376,65 @@ def find_git_repo_root(start_dir: str) -> Optional[str]:
         cur = parent
 
 
+def event_status_html_export_paths(base_dir: str) -> Tuple[str, str]:
+    """Absolute paths written by _export_event_status_html_files (same layout)."""
+    root_html = os.path.abspath(os.path.join(base_dir, HTML_EXPORT_NAME))
+    dist_html = os.path.abspath(os.path.join(base_dir, "dist", HTML_EXPORT_NAME))
+    return root_html, dist_html
+
+
+def git_paths_under_repo(repo_root: str, abs_paths: List[str]) -> List[str]:
+    """Return repo-relative POSIX paths for files that exist and lie inside repo_root."""
+    repo = os.path.abspath(repo_root)
+    out: List[str] = []
+    seen: set[str] = set()
+    for raw in abs_paths:
+        p = os.path.abspath(os.path.normpath(raw))
+        if not os.path.isfile(p):
+            continue
+        try:
+            rel = os.path.relpath(p, repo)
+        except ValueError:
+            continue
+        if rel.startswith(".." + os.sep) or rel == "..":
+            continue
+        rel_posix = rel.replace("\\", "/")
+        if rel_posix not in seen:
+            seen.add(rel_posix)
+            out.append(rel_posix)
+    return out
+
+
+def git_add_commit_push_paths(repo_root: str, paths_in_repo: List[str], commit_message: str) -> str:
+    """Stage only the given repo-relative paths, commit if the index changed, then push origin main."""
+
+    def run_git(args: List[str], allow_fail: bool = False) -> subprocess.CompletedProcess[str]:
+        cp = subprocess.run(
+            ["git", "-C", repo_root] + args,
+            check=False,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+        if not allow_fail and cp.returncode != 0:
+            raise RuntimeError((cp.stderr or cp.stdout or "Git command failed").strip())
+        return cp
+
+    if not paths_in_repo:
+        raise RuntimeError("No paths to stage.")
+    # Clear the index so only these paths are committed (no leftover staged files).
+    run_git(["reset", "-q", "HEAD"], allow_fail=True)
+    run_git(["add", "--"] + paths_in_repo)
+    st = run_git(["diff", "--cached", "--quiet"], allow_fail=True)
+    if st.returncode == 0:
+        run_git(["push", "origin", "main"])
+        return "HTML matches the last commit; nothing new to commit. Ran git push."
+    run_git(["commit", "-m", commit_message])
+    run_git(["push", "origin", "main"])
+    return "Committed and pushed: " + ", ".join(paths_in_repo)
+
+
 def sort_activity_types(vals: List[str]) -> List[str]:
     return sorted([str(v).strip() for v in (vals or []) if str(v).strip()], key=lambda s: s.casefold())
 
@@ -2791,7 +2850,7 @@ class AdminApp(ctk.CTk):
     def _export_event_status_html_files(self) -> Tuple[bool, str]:
         base = app_directory()
         cfg = self._collect_config()
-        out_path = os.path.join(base, HTML_EXPORT_NAME)
+        out_path, dist_path = event_status_html_export_paths(base)
         out_dir = os.path.dirname(out_path) or base
         try:
             map_name = ensure_export_assets(out_dir, base)
@@ -2807,7 +2866,6 @@ class AdminApp(ctk.CTk):
             )
             with open(out_path, "w", encoding="utf-8") as f:
                 f.write(html)
-            dist_path = os.path.join(base, "dist", HTML_EXPORT_NAME)
             dist_dir = os.path.dirname(dist_path)
             if dist_dir:
                 os.makedirs(dist_dir, exist_ok=True)
@@ -2832,16 +2890,46 @@ class AdminApp(ctk.CTk):
             themed_message(self, "Lap times", f"Could not save: {e}", kind="error")
             return
         ok, detail = self._export_event_status_html_files()
-        if ok:
+        if not ok:
+            themed_message(self, "Export failed", detail, kind="error")
+            return
+        push_ok, push_detail = self._git_push_event_status_html_only()
+        if push_ok:
             themed_message(
                 self,
                 "Lap times",
-                "Saved and HTML export refreshed (project + dist).",
+                "Saved, HTML refreshed, and pushed (event_status.html only).",
                 kind="success",
-                detail=detail,
+                detail=f"{detail}\n\n{push_detail}",
             )
         else:
-            themed_message(self, "Export failed", detail, kind="error")
+            themed_message(
+                self,
+                "Lap times",
+                "Saved and HTML export refreshed (project + dist). Git push did not complete.",
+                kind="warning",
+                detail=f"{detail}\n\n{push_detail}",
+            )
+
+    def _git_push_event_status_html_only(self) -> Tuple[bool, str]:
+        """Push only repo copies of event_status.html (root and/or dist), nothing else."""
+        repo = find_git_repo_root(app_directory())
+        if not repo:
+            return False, "No git repository found in this app folder or its parent folders."
+        base = app_directory()
+        abs_paths = list(event_status_html_export_paths(base))
+        rels = git_paths_under_repo(repo, abs_paths)
+        if not rels:
+            return (
+                False,
+                "No event_status.html files found under the repo (or paths are outside the repo).",
+            )
+        try:
+            msg = f"Update event status HTML (lap times) {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+            detail = git_add_commit_push_paths(repo, rels, msg)
+            return True, detail
+        except RuntimeError as e:
+            return False, str(e)
 
     def _build_ui(self) -> None:
         save_bar = ctk.CTkFrame(self, fg_color="transparent")
@@ -2950,7 +3038,8 @@ class AdminApp(ctk.CTk):
         ).pack(anchor="w", padx=4, pady=(8, 4))
         ctk.CTkLabel(
             tab_laps,
-            text="Name (max 8 characters), minutes, and seconds. Rows are saved automatically to lap_times.json.",
+            text="Name (max 8 characters), minutes, and seconds. Rows are saved automatically to lap_times.json. "
+            "Update lap times rebuilds event_status.html and git-pushes only that file (root and dist copies when present), not the rest of the project.",
             text_color=SUBTLE_TEXT_COLOR,
             wraplength=640,
             justify="left",
