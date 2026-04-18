@@ -45,7 +45,7 @@
           "name_g2": "Movies & Poker (Optional - BYO BBQ food, let us know)",
           "loc_g1": "The Barn",
           "loc_g2": "The Barn",
-          "image": ""
+          "image": "movies and poker.jpg"
         }
       ]
     },
@@ -58,7 +58,7 @@
           "name_g2": "Morning Meditation Session",
           "loc_g1": "Dam Forest",
           "loc_g2": "Dam Forest",
-          "image": ""
+          "image": "meditation.jpg"
         },
         {
           "start": "09:00",
@@ -67,7 +67,7 @@
           "name_g2": "Swimming & Kayaking",
           "loc_g1": "Bayside",
           "loc_g2": "Bayside",
-          "image": ""
+          "image": "7.jpg"
         },
         {
           "start": "12:00",
@@ -76,7 +76,7 @@
           "name_g2": "Lunch, Camp Setup",
           "loc_g1": "The Barn",
           "loc_g2": "The Barn",
-          "image": ""
+          "image": "2.jpg"
         },
         {
           "start": "13:00",
@@ -85,7 +85,7 @@
           "name_g2": "Rally Driving",
           "loc_g1": "Shooting",
           "loc_g2": "Watch Tower",
-          "image": ""
+          "image": "10.jpg"
         },
         {
           "start": "17:00",
@@ -94,7 +94,7 @@
           "name_g2": "Whatever you like",
           "loc_g1": "Sauna",
           "loc_g2": "",
-          "image": ""
+          "image": "Sauna and ice bath.jpg"
         },
         {
           "start": "18:30",
@@ -103,7 +103,7 @@
           "name_g2": "Dinner, Campfire & Drinks",
           "loc_g1": "Fire Top",
           "loc_g2": "Fire Top",
-          "image": ""
+          "image": "dinner fire drinks.jpg"
         }
       ]
     },
@@ -116,7 +116,7 @@
           "name_g2": "Morning Meditation Session",
           "loc_g1": "Dam Forest",
           "loc_g2": "Dam Forest",
-          "image": ""
+          "image": "meditation.jpg"
         },
         {
           "start": "08:30",
@@ -125,7 +125,7 @@
           "name_g2": "Breakfast & Coffee",
           "loc_g1": "The Barn",
           "loc_g2": "The Barn",
-          "image": ""
+          "image": "1.jpg"
         },
         {
           "start": "10:00",
@@ -134,7 +134,7 @@
           "name_g2": "Touch Football",
           "loc_g1": "Touch Football",
           "loc_g2": "Touch Football",
-          "image": ""
+          "image": "football.jpg"
         },
         {
           "start": "11:00",
@@ -143,7 +143,7 @@
           "name_g2": "Lunch",
           "loc_g1": "The Barn",
           "loc_g2": "The Barn",
-          "image": ""
+          "image": "3.jpg"
         },
         {
           "start": "13:00",
@@ -152,7 +152,7 @@
           "name_g2": "Shooting",
           "loc_g1": "Watch Tower",
           "loc_g2": "Shooting",
-          "image": ""
+          "image": "9.jpg"
         },
         {
           "start": "15:00",
@@ -161,7 +161,7 @@
           "name_g2": "Sauna & Icebath",
           "loc_g1": "Shooting",
           "loc_g2": "Sauna",
-          "image": ""
+          "image": "Sauna and ice bath.jpg"
         },
         {
           "start": "18:30",
@@ -170,7 +170,7 @@
           "name_g2": "Dinner & Bloke Burning",
           "loc_g1": "Fire Bottom",
           "loc_g2": "Fire Bottom",
-          "image": ""
+          "image": "5.jpg"
         }
       ]
     },
@@ -183,7 +183,7 @@
           "name_g2": "Morning Meditation Session",
           "loc_g1": "Dam Forest",
           "loc_g2": "Dam Forest",
-          "image": ""
+          "image": "meditation.jpg"
         },
         {
           "start": "08:30",
@@ -192,7 +192,7 @@
           "name_g2": "Breakfast & Coffee",
           "loc_g1": "The Barn",
           "loc_g2": "The Barn",
-          "image": ""
+          "image": "1.jpg"
         },
         {
           "start": "09:30",
@@ -201,7 +201,7 @@
           "name_g2": "Shooting",
           "loc_g1": "Watch Tower",
           "loc_g2": "Shooting",
-          "image": ""
+          "image": "9.jpg"
         },
         {
           "start": "15:00",
@@ -210,7 +210,7 @@
           "name_g2": "Time Capsule Burying",
           "loc_g1": "",
           "loc_g2": "",
-          "image": ""
+          "image": "13.jpg"
         }
       ]
     }
