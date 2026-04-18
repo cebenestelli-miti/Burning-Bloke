@@ -6,6 +6,7 @@ from __future__ import annotations
 import html
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -72,6 +73,7 @@ DEFAULT_LOCATION_TYPES = [
 ]
 
 CONFIG_NAME = "config.json"
+LAP_TIMES_FILE = "lap_times.json"
 HTML_EXPORT_NAME = "event_status.html"
 ICON_ICO = "app_icon.ico"
 BACKGROUND_IMAGE_NAME = "Background.jpg"
@@ -280,6 +282,86 @@ def themed_message(
 
 def config_path() -> str:
     return os.path.join(app_directory(), CONFIG_NAME)
+
+
+def lap_times_path() -> str:
+    return os.path.join(app_directory(), LAP_TIMES_FILE)
+
+
+_LAP_COLON_RE = re.compile(r"^(\d+):(\d+(?:\.\d+)?)$")
+
+
+def split_lap_for_ui(lap: str) -> Tuple[str, str]:
+    """Split stored lap string into minutes and seconds for the editor."""
+    s = (lap or "").strip()
+    if not s:
+        return "", ""
+    m = _LAP_COLON_RE.match(s)
+    if m:
+        return m.group(1), m.group(2)
+    return "", s
+
+
+def join_lap_from_ui(minutes_str: str, seconds_str: str) -> str:
+    """Build stored lap string from editor fields (seconds-only when minutes are 0)."""
+    m_s = (minutes_str or "").strip()
+    s_s = (seconds_str or "").strip()
+    if not m_s and not s_s:
+        return ""
+    try:
+        m = int(m_s) if m_s else 0
+    except ValueError:
+        m = 0
+    if m < 0:
+        m = 0
+    if not s_s:
+        if m > 0:
+            return f"{m}:0"
+        return ""
+    if m == 0:
+        return s_s
+    return f"{m}:{s_s}"
+
+
+def load_lap_times_list() -> List[Dict[str, str]]:
+    """Load lap rows from disk; each row is {'name': str, 'lap': str} (name max 8 chars)."""
+    path = lap_times_path()
+    if not os.path.isfile(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return []
+    raw = data.get("laps") if isinstance(data, dict) else None
+    if not isinstance(raw, list):
+        return []
+    out: List[Dict[str, str]] = []
+    for item in raw:
+        if not isinstance(item, dict):
+            continue
+        name = str(item.get("name", "")).strip()[:8]
+        lap = str(item.get("lap", item.get("lap_time", ""))).strip()
+        if not name and not lap:
+            continue
+        out.append({"name": name, "lap": lap})
+    return out
+
+
+def save_lap_times_list(rows: List[Dict[str, str]]) -> None:
+    path = lap_times_path()
+    clean: List[Dict[str, str]] = []
+    for r in rows or []:
+        if not isinstance(r, dict):
+            continue
+        name = str(r.get("name", "")).strip()[:8]
+        lap = str(r.get("lap", r.get("lap_time", ""))).strip()
+        if not name and not lap:
+            continue
+        clean.append({"name": name, "lap": lap})
+    payload = {"laps": clean}
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2)
 
 
 def find_git_repo_root(start_dir: str) -> Optional[str]:
@@ -633,12 +715,15 @@ def build_event_status_html(
     map_image_name: str = "site_map_art_illustrated2.png",
     map_image_width: int = 767,
     map_image_height: int = 1024,
+    lap_times_rows: Optional[List[Dict[str, str]]] = None,
 ) -> str:
     schedule = config_to_public_schedule(cfg)
     payload = json.dumps(schedule, ensure_ascii=False)
     payload = payload.replace("<", "\\u003c")
     location_types = normalize_location_types_from_config(cfg.get("location_types"))
     locations_payload = json.dumps(location_types, ensure_ascii=False).replace("<", "\\u003c")
+    laps = lap_times_rows if lap_times_rows is not None else load_lap_times_list()
+    laps_payload = json.dumps(laps, ensure_ascii=False).replace("<", "\\u003c")
     map_src = map_image_name.replace("\\", "/")
     _gen = datetime.now().astimezone()
     _tz = (_gen.tzname() or "").strip()
@@ -875,6 +960,152 @@ def build_event_status_html(
       pointer-events: auto;
       cursor: pointer;
     }}
+    .barn-popover {{
+      position: absolute;
+      z-index: 6;
+      left: calc((25 / 767) * 100% + 6px);
+      top: calc((40 / 1024) * 100% + 6px);
+      right: auto;
+      bottom: auto;
+      max-width: 220px;
+      padding: 10px 12px 12px;
+      background: #fffef8;
+      border: 1px solid #e0c896;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+      font-size: 0.88rem;
+      line-height: 1.35;
+      color: #3e2723;
+      pointer-events: auto;
+      text-align: left;
+    }}
+    .barn-popover__head {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #f0e0c0;
+    }}
+    .barn-popover__head strong {{
+      font-size: 0.95rem;
+      color: #5d4037;
+    }}
+    .barn-popover__close {{
+      border: none;
+      background: transparent;
+      color: #795548;
+      font-size: 1.35rem;
+      line-height: 1;
+      padding: 0 4px;
+      cursor: pointer;
+      border-radius: 4px;
+    }}
+    .barn-popover__close:hover {{
+      background: rgba(121,85,72,0.12);
+      color: #3e2723;
+    }}
+    .barn-popover__list {{
+      margin: 0;
+      padding-left: 1.25em;
+      list-style: disc;
+      list-style-position: outside;
+    }}
+    .barn-popover__list li {{
+      margin: 0.25em 0;
+      display: list-item;
+    }}
+    .lap-times-popover {{
+      position: absolute;
+      z-index: 6;
+      top: 50%;
+      right: 10px;
+      bottom: auto;
+      transform: translateY(-50%);
+      width: 148px;
+      max-width: 42%;
+      max-height: calc(100% - 20px);
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 8px 10px 10px;
+      background: rgba(255, 253, 250, 0.97);
+      border: 1px solid #b0bec5;
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+      font-size: 0.78rem;
+      line-height: 1.25;
+      color: #263238;
+      pointer-events: auto;
+      text-align: left;
+      overflow: hidden;
+    }}
+    .lap-times-popover[hidden] {{
+      display: none !important;
+    }}
+    .lap-times-popover__head {{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      flex-shrink: 0;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #cfd8dc;
+    }}
+    .lap-times-popover__head strong {{
+      font-size: 0.82rem;
+      color: #37474f;
+    }}
+    .lap-times-popover__close {{
+      border: none;
+      background: transparent;
+      color: #546e7a;
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 0 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }}
+    .lap-times-popover__close:hover {{
+      background: rgba(84,110,122,0.12);
+    }}
+    .lap-times-popover__body {{
+      flex: 0 1 auto;
+      overflow-y: auto;
+      min-height: 0;
+      max-height: min(55vh, 360px);
+    }}
+    .lap-times-popover__row {{
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 4px 0;
+      border-bottom: 1px solid #eceff1;
+    }}
+    .lap-times-popover__row:last-child {{
+      border-bottom: none;
+    }}
+    .lap-times-popover__name {{
+      font-weight: 700;
+      max-width: 52%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }}
+    .lap-times-popover__lap {{
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      flex: 1;
+      min-width: 0;
+      word-break: break-all;
+    }}
+    .lap-times-popover__empty {{
+      color: #78909c;
+      font-style: italic;
+      padding: 6px 0;
+    }}
     .map-hint {{
       text-align: center;
       color: #48606f;
@@ -962,17 +1193,34 @@ def build_event_status_html(
     <img src="{map_src}" width="{map_image_width}" height="{map_image_height}" alt="Burning Bloke site map"/>
     <div id="map-target" class="map-target" aria-hidden="true"></div>
     <svg viewBox="0 0 767 1024" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <a href="#the-barn" aria-label="The Barn"><rect id="zone-the-barn" x="25" y="40" width="275" height="185" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#the-barn" aria-label="The Barn"><rect id="zone-the-barn" x="25" y="40" width="220" height="185" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#fire-top" aria-label="Fire Top"><rect id="zone-fire-top" x="178" y="220" width="205" height="145" rx="16" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#sauna" aria-label="Sauna"><ellipse id="zone-sauna" cx="124" cy="648" rx="72" ry="58" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#watch-tower" aria-label="Watch Tower"><rect id="zone-watch-tower" x="514" y="472" width="170" height="170" rx="14" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#race-track" aria-label="Race Track"><polygon id="zone-race-track" points="405,150 750,150 750,700 465,700 405,640" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#dam-forest" aria-label="Dam Forest"><rect id="zone-dam-forest" x="406" y="792" width="155" height="208" rx="26" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#bayside" aria-label="Bayside"><rect id="zone-bayside" x="158" y="740" width="552" height="225" rx="65" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#touch-football" aria-label="Touch Football"><ellipse id="zone-touch-football" cx="380" cy="400" rx="70" ry="70" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#shooting" aria-label="Shooting"><ellipse id="zone-shooting" cx="210" cy="720" rx="72" ry="62" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#fire-bottom" aria-label="Fire Bottom"><ellipse id="zone-fire-bottom" cx="268" cy="654" rx="52" ry="46" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#watch-tower" aria-label="Watch Tower"><rect id="zone-watch-tower" x="450" y="436" width="164" height="164" rx="14" fill="rgba(255,255,255,0.001)"/></a>
     </svg>
+    <div id="barn-popover" class="barn-popover" hidden role="dialog" aria-modal="true" aria-labelledby="barn-popover-title">
+      <div class="barn-popover__head">
+        <strong id="barn-popover-title">The Barn</strong>
+        <button type="button" class="barn-popover__close" aria-label="Close">&times;</button>
+      </div>
+      <ul class="barn-popover__list">
+        <li>Toilets</li>
+        <li>Shower</li>
+        <li>Kitchen</li>
+        <li>Movies</li>
+      </ul>
+    </div>
+    <div id="lap-times-popover" class="lap-times-popover" hidden role="dialog" aria-modal="true" aria-labelledby="lap-times-popover-title">
+      <div class="lap-times-popover__head">
+        <strong id="lap-times-popover-title">Lap times</strong>
+        <button type="button" class="lap-times-popover__close" aria-label="Close">&times;</button>
+      </div>
+      <div id="lap-times-popover-body" class="lap-times-popover__body"></div>
+    </div>
   </div>
   <p id="map-status" class="map-hint">Click schedule/location links to target the map.</p>
   <p id="map-generated" class="map-hint map-hint--generated">HTML generated {html_generated_label}</p>
@@ -981,15 +1229,16 @@ def build_event_status_html(
 <script>
 const schedule = {payload};
 const locationTypes = {locations_payload};
+const lapTimes = {laps_payload};
 const mapTarget = document.getElementById("map-target");
 const mapStatus = document.getElementById("map-status");
 const TARGET_VISIBLE_MS = 5200;
 const targetOverrides = {{
+  "the-barn": {{ xPct: 17.6, yPct: 17.5 }},
   "fire-top": {{ xPct: 32.6, yPct: 27.0 }},
   "fire-bottom": {{ xPct: 34.9, yPct: 63.9 }},
   "watch-tower": {{ xPct: 68.8, yPct: 53.8 }},
   "bayside": {{ xPct: 60.2, yPct: 71.8 }},
-  "touch-football": {{ xPct: 64.8, yPct: 22.0 }},
   "shooting": {{ xPct: 24.8, yPct: 70.0 }},
   "sauna": {{ xPct: 16.2, yPct: 63.3 }},
   "dam-forest": {{ xPct: 63.0, yPct: 86.0 }}
@@ -1005,10 +1254,8 @@ function locationToId(name) {{
     "fire-bottom": "fire-bottom",
     "sauna": "sauna",
     "watch tower": "watch-tower",
-    "race track": "race-track",
     "bayside": "bayside",
     "bay side": "bayside",
-    "touch football": "touch-football",
     "shooting": "shooting",
     "dam forest": "dam-forest"
   }};
@@ -1159,7 +1406,9 @@ function buildLocationLinks() {{
     b.type = "button";
     b.className = "map-link";
     b.textContent = loc;
-    b.addEventListener("click", () => focusMapLocation(id, loc));
+    b.addEventListener("click", () => {{
+      focusMapLocation(id, loc);
+    }});
     wrap.appendChild(b);
   }});
 }}
@@ -1304,6 +1553,154 @@ function focusMapLocation(id, label) {{
   setTimeout(() => notifyParentScrollToMap(mapScrollEl, "titleAtTop"), 220);
 }}
 
+function hideLapTimesPopover() {{
+  const el = document.getElementById("lap-times-popover");
+  if (el) el.hidden = true;
+  if (window._lapPopoverOutside) {{
+    document.removeEventListener("click", window._lapPopoverOutside, true);
+    window._lapPopoverOutside = null;
+  }}
+  notifyParentHeight();
+}}
+
+function lapTimeSortKey(raw) {{
+  const s = (raw == null ? "" : String(raw)).trim();
+  if (!s) return Number.POSITIVE_INFINITY;
+  const colon = s.match(/^(\\d+):(\\d+(?:\\.\\d+)?)$/);
+  if (colon) {{
+    return parseInt(colon[1], 10) * 60 + parseFloat(colon[2]);
+  }}
+  const num = parseFloat(s.replace(/,/g, "."));
+  if (!Number.isNaN(num)) return num;
+  return Number.POSITIVE_INFINITY;
+}}
+
+function lapStrOf(r) {{
+  return r && r.lap != null ? String(r.lap) : r && r.lap_time != null ? String(r.lap_time) : "";
+}}
+
+/** Popover display: omit leading 0: when minutes are zero (e.g. 0:58 → 58). */
+function formatLapForPopoverDisplay(raw) {{
+  const s = (raw == null ? "" : String(raw)).trim();
+  if (!s) return "";
+  const colon = s.match(/^(\\d+):(\\d+(?:\\.\\d+)?)$/);
+  if (colon) {{
+    const m = parseInt(colon[1], 10);
+    const sec = colon[2];
+    if (m === 0) return sec;
+    return `${{m}}:${{sec}}`;
+  }}
+  return s;
+}}
+
+function renderLapTimesPopoverBody() {{
+  const body = document.getElementById("lap-times-popover-body");
+  if (!body) return;
+  const rows = Array.isArray(lapTimes) ? lapTimes.slice() : [];
+  if (!rows.length) {{
+    body.innerHTML = '<p class="lap-times-popover__empty">No laps yet.</p>';
+    return;
+  }}
+  rows.sort((a, b) => {{
+    const ka = lapTimeSortKey(lapStrOf(a));
+    const kb = lapTimeSortKey(lapStrOf(b));
+    if (ka !== kb) return ka - kb;
+    const na = a && a.name != null ? String(a.name) : "";
+    const nb = b && b.name != null ? String(b.name) : "";
+    return na.localeCompare(nb);
+  }});
+  body.innerHTML = rows
+    .map((r) => {{
+      const n = r && r.name != null ? String(r.name) : "";
+      const t = lapStrOf(r);
+      const tDisp = formatLapForPopoverDisplay(t);
+      const ne = n.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+      const te = tDisp.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+      return `<div class="lap-times-popover__row"><span class="lap-times-popover__name">${{ne}}</span><span class="lap-times-popover__lap">${{te}}</span></div>`;
+    }})
+    .join("");
+}}
+
+function showLapTimesPopover() {{
+  hideLapTimesPopover();
+  hideBarnPopover();
+  const el = document.getElementById("lap-times-popover");
+  if (!el) return;
+  renderLapTimesPopoverBody();
+  el.hidden = false;
+  notifyParentHeight();
+  window._lapPopoverOutside = function (ev) {{
+    if (el.contains(ev.target)) return;
+    hideLapTimesPopover();
+  }};
+  setTimeout(function () {{
+    document.addEventListener("click", window._lapPopoverOutside, true);
+  }}, 0);
+}}
+
+function hideBarnPopover() {{
+  const el = document.getElementById("barn-popover");
+  if (el) el.hidden = true;
+  if (window._barnPopoverOutside) {{
+    document.removeEventListener("click", window._barnPopoverOutside, true);
+    window._barnPopoverOutside = null;
+  }}
+  notifyParentHeight();
+}}
+
+function showBarnPopover() {{
+  hideLapTimesPopover();
+  hideBarnPopover();
+  const el = document.getElementById("barn-popover");
+  if (!el) return;
+  el.hidden = false;
+  notifyParentHeight();
+  window._barnPopoverOutside = function (ev) {{
+    if (el.contains(ev.target)) return;
+    hideBarnPopover();
+  }};
+  setTimeout(function () {{
+    document.addEventListener("click", window._barnPopoverOutside, true);
+  }}, 0);
+}}
+
+function wireBarnPopoverUi() {{
+  const btn = document.querySelector("#barn-popover .barn-popover__close");
+  if (btn && !btn.dataset.wired) {{
+    btn.dataset.wired = "1";
+    btn.addEventListener("click", function (e) {{
+      e.preventDefault();
+      e.stopPropagation();
+      hideBarnPopover();
+    }});
+  }}
+}}
+
+function wireLapTimesPopoverUi() {{
+  const btn = document.querySelector("#lap-times-popover .lap-times-popover__close");
+  if (btn && !btn.dataset.wired) {{
+    btn.dataset.wired = "1";
+    btn.addEventListener("click", function (e) {{
+      e.preventDefault();
+      e.stopPropagation();
+      hideLapTimesPopover();
+    }});
+  }}
+}}
+
+function wireMapPopoverEscape() {{
+  if (window._mapPopoverEscWired) return;
+  window._mapPopoverEscWired = true;
+  document.addEventListener(
+    "keydown",
+    function (ev) {{
+      if (ev.key !== "Escape") return;
+      hideBarnPopover();
+    }},
+    true
+  );
+}}
+
 function bindMapClicks() {{
   document.querySelectorAll("#map-wrap svg a").forEach((anchor) => {{
     anchor.addEventListener("click", (event) => {{
@@ -1312,6 +1709,8 @@ function bindMapClicks() {{
       if (!href.startsWith("#")) return;
       const id = href.slice(1);
       const label = (anchor.getAttribute("aria-label") || id).trim();
+      if (id === "the-barn") showBarnPopover();
+      if (id === "watch-tower") showLapTimesPopover();
       focusMapLocation(id, label);
     }});
   }});
@@ -1351,6 +1750,9 @@ function bindHeightObservers() {{
 
 buildSchedule();
 buildLocationLinks();
+wireBarnPopoverUi();
+wireLapTimesPopoverUi();
+wireMapPopoverEscape();
 bindMapClicks();
 bindHeightObservers();
 updateDisplay();
@@ -2078,6 +2480,57 @@ class ActivityRow(ctk.CTkFrame):
         self._refresh_image_label()
 
 
+class LapTimeEditorRow(ctk.CTkFrame):
+    """Single name + minutes + seconds row in the Lap Times tab (name max 8 chars)."""
+
+    def __init__(self, parent: ctk.CTkScrollableFrame, admin: "AdminApp", on_remove: Callable[["LapTimeEditorRow"], None]):
+        super().__init__(parent, fg_color="transparent")
+        self._admin = admin
+        self._name_e = ctk.CTkEntry(self, width=120, placeholder_text="Name")
+        self._min_e = ctk.CTkEntry(self, width=56, placeholder_text="Min")
+        self._sec_e = ctk.CTkEntry(self, width=100, placeholder_text="Sec")
+        self._name_e.grid(row=0, column=0, padx=(0, 10), pady=3, sticky="w")
+        self._min_e.grid(row=0, column=1, padx=(0, 4), pady=3, sticky="w")
+        ctk.CTkLabel(self, text=":", text_color=SUBTLE_TEXT_COLOR, width=10).grid(row=0, column=2, pady=3)
+        self._sec_e.grid(row=0, column=3, padx=(0, 10), pady=3, sticky="ew")
+        self.grid_columnconfigure(3, weight=1)
+        ctk.CTkButton(self, text="✕", width=32, command=lambda: on_remove(self)).grid(row=0, column=4, pady=3)
+        self._name_e.bind("<KeyRelease>", self._on_name_change)
+        self._name_e.bind("<FocusOut>", self._on_any_change)
+        self._min_e.bind("<KeyRelease>", self._on_any_change)
+        self._min_e.bind("<FocusOut>", self._on_any_change)
+        self._sec_e.bind("<KeyRelease>", self._on_any_change)
+        self._sec_e.bind("<FocusOut>", self._on_any_change)
+
+    def _on_name_change(self, *_args: Any) -> None:
+        s = self._name_e.get()
+        if len(s) > 8:
+            cur = self._name_e.index("insert")
+            self._name_e.delete(0, "end")
+            self._name_e.insert(0, s[:8])
+            try:
+                self._name_e.icursor(min(int(cur), 8))
+            except tk.TclError:
+                pass
+        self._on_any_change()
+
+    def _on_any_change(self, *_args: Any) -> None:
+        self._admin._schedule_lap_persist()
+
+    def get_data(self) -> Dict[str, str]:
+        lap = join_lap_from_ui(self._min_e.get(), self._sec_e.get())
+        return {"name": self._name_e.get().strip()[:8], "lap": lap}
+
+    def set_data(self, name: str, lap: str) -> None:
+        self._name_e.delete(0, "end")
+        self._name_e.insert(0, (name or "")[:8])
+        mins, secs = split_lap_for_ui(lap or "")
+        self._min_e.delete(0, "end")
+        self._min_e.insert(0, mins)
+        self._sec_e.delete(0, "end")
+        self._sec_e.insert(0, secs)
+
+
 class DaySection(ctk.CTkFrame):
     def __init__(self, parent: ctk.CTkScrollableFrame, day: date, admin: "AdminApp"):
         super().__init__(parent, fg_color="transparent")
@@ -2138,7 +2591,11 @@ class AdminApp(ctk.CTk):
         self._location_combos: List[ctk.CTkComboBox] = []
         self._qr_code_filename = ""
         self._startup_days_from_file: Optional[Dict[str, Any]] = None
+        self._lap_rows: List["LapTimeEditorRow"] = []
+        self._lap_persist_after_id: Optional[str] = None
+        self._lap_scroll: Optional[ctk.CTkScrollableFrame] = None
 
+        self.protocol("WM_DELETE_WINDOW", self._on_close_request)
         self._build_ui()
         self._load_config_at_start()
 
@@ -2240,6 +2697,146 @@ class AdminApp(ctk.CTk):
         self._refresh_manage_activities_list()
         self.refresh_all_activity_combos()
 
+    def _on_close_request(self) -> None:
+        self._cancel_lap_persist_timer()
+        try:
+            save_lap_times_list(self._collect_lap_rows_from_ui())
+        except OSError:
+            pass
+        self.destroy()
+
+    def _cancel_lap_persist_timer(self) -> None:
+        if self._lap_persist_after_id is not None:
+            try:
+                self.after_cancel(self._lap_persist_after_id)
+            except (ValueError, tk.TclError):
+                pass
+            self._lap_persist_after_id = None
+
+    def _schedule_lap_persist(self) -> None:
+        self._cancel_lap_persist_timer()
+        self._lap_persist_after_id = self.after(400, self._flush_lap_times_to_disk)
+
+    def _flush_lap_times_to_disk(self) -> None:
+        self._lap_persist_after_id = None
+        try:
+            save_lap_times_list(self._collect_lap_rows_from_ui())
+        except OSError:
+            pass
+
+    def _collect_lap_rows_from_ui(self) -> List[Dict[str, str]]:
+        out: List[Dict[str, str]] = []
+        for row in self._lap_rows:
+            try:
+                if row.winfo_exists():
+                    out.append(row.get_data())
+            except tk.TclError:
+                continue
+        return out
+
+    def _load_lap_times_into_ui(self) -> None:
+        if self._lap_scroll is None:
+            return
+        for row in list(self._lap_rows):
+            try:
+                row.destroy()
+            except tk.TclError:
+                pass
+        self._lap_rows.clear()
+        for item in load_lap_times_list():
+            self._add_lap_editor_row(item.get("name", ""), item.get("lap", ""))
+
+    def _add_lap_editor_row(self, name: str = "", lap: str = "") -> None:
+        if self._lap_scroll is None:
+            return
+
+        def remove(r: LapTimeEditorRow) -> None:
+            if r in self._lap_rows:
+                self._lap_rows.remove(r)
+            try:
+                r.destroy()
+            except tk.TclError:
+                pass
+            self._schedule_lap_persist()
+
+        row = LapTimeEditorRow(self._lap_scroll, self, remove)
+        row.pack(fill="x", pady=2)
+        self._lap_rows.append(row)
+        if name or lap:
+            row.set_data(name, lap)
+
+    def _clear_lap_times_list(self) -> None:
+        if not messagebox.askyesno("Clear lap times", "Remove all lap rows? This cannot be undone."):
+            return
+        self._cancel_lap_persist_timer()
+        for row in list(self._lap_rows):
+            try:
+                row.destroy()
+            except tk.TclError:
+                pass
+        self._lap_rows.clear()
+        try:
+            save_lap_times_list([])
+        except OSError as e:
+            themed_message(self, "Lap times", f"Could not save: {e}", kind="error")
+            return
+        themed_message(self, "Lap times", "All laps cleared.", kind="success")
+
+    def _export_event_status_html_files(self) -> Tuple[bool, str]:
+        base = app_directory()
+        cfg = self._collect_config()
+        out_path = os.path.join(base, HTML_EXPORT_NAME)
+        out_dir = os.path.dirname(out_path) or base
+        try:
+            map_name = ensure_export_assets(out_dir, base)
+            map_path = os.path.join(base, map_name)
+            mw, mh = _map_image_pixel_size(map_path)
+            laps = self._collect_lap_rows_from_ui()
+            html = build_event_status_html(
+                cfg,
+                map_image_name=map_name,
+                map_image_width=mw,
+                map_image_height=mh,
+                lap_times_rows=laps,
+            )
+            with open(out_path, "w", encoding="utf-8") as f:
+                f.write(html)
+            dist_path = os.path.join(base, "dist", HTML_EXPORT_NAME)
+            dist_dir = os.path.dirname(dist_path)
+            if dist_dir:
+                os.makedirs(dist_dir, exist_ok=True)
+            ensure_export_assets(dist_dir, base)
+            with open(dist_path, "w", encoding="utf-8") as f:
+                f.write(html)
+            lt_src = lap_times_path()
+            if os.path.isfile(lt_src):
+                try:
+                    shutil.copy2(lt_src, os.path.join(base, "dist", LAP_TIMES_FILE))
+                except OSError:
+                    pass
+            return True, f"{out_path}\n{dist_path}"
+        except OSError as e:
+            return False, str(e)
+
+    def _update_lap_times_export(self) -> None:
+        self._cancel_lap_persist_timer()
+        try:
+            save_lap_times_list(self._collect_lap_rows_from_ui())
+        except OSError as e:
+            themed_message(self, "Lap times", f"Could not save: {e}", kind="error")
+            return
+        ok, detail = self._export_event_status_html_files()
+        if ok:
+            themed_message(
+                self,
+                "Lap times",
+                "Saved and HTML export refreshed (project + dist).",
+                kind="success",
+                detail=detail,
+            )
+        else:
+            themed_message(self, "Export failed", detail, kind="error")
+
     def _build_ui(self) -> None:
         save_bar = ctk.CTkFrame(self, fg_color="transparent")
         save_bar.pack(side="bottom", fill="x", padx=20, pady=(8, 16))
@@ -2269,6 +2866,7 @@ class AdminApp(ctk.CTk):
         self._tabview.pack(fill="both", expand=True, padx=12, pady=(4, 8))
 
         tab_home = self._tabview.add("Home")
+        tab_laps = self._tabview.add("Lap Times")
         tab_activities = self._tabview.add("Activities")
 
         header = ctk.CTkFrame(tab_home, fg_color="transparent")
@@ -2339,6 +2937,31 @@ class AdminApp(ctk.CTk):
         self.days_parent = ctk.CTkScrollableFrame(tab_home, fg_color="transparent")
         self.days_parent.pack(fill="both", expand=True, padx=2, pady=(0, 6))
 
+        ctk.CTkLabel(
+            tab_laps,
+            text="Lap times",
+            font=ctk.CTkFont(size=14, weight="bold"),
+        ).pack(anchor="w", padx=4, pady=(8, 4))
+        ctk.CTkLabel(
+            tab_laps,
+            text="Name (max 8 characters), minutes, and seconds. Rows are saved automatically to lap_times.json.",
+            text_color=SUBTLE_TEXT_COLOR,
+            wraplength=640,
+            justify="left",
+        ).pack(anchor="w", padx=4, pady=(0, 8))
+        self._lap_scroll = ctk.CTkScrollableFrame(tab_laps, fg_color="transparent")
+        self._lap_scroll.pack(fill="both", expand=True, padx=4, pady=(0, 6))
+        ctk.CTkButton(tab_laps, text="+ Add lap", width=120, command=self._add_lap_editor_row).pack(anchor="w", padx=4, pady=(0, 4))
+        lap_btn_row = ctk.CTkFrame(tab_laps, fg_color="transparent")
+        lap_btn_row.pack(fill="x", padx=4, pady=(4, 10))
+        ctk.CTkButton(
+            lap_btn_row,
+            text="Update lap times",
+            width=150,
+            command=self._update_lap_times_export,
+        ).pack(side="left", padx=(0, 10))
+        ctk.CTkButton(lap_btn_row, text="Clear list", width=120, command=self._clear_lap_times_list).pack(side="left")
+
         add_type_row = ctk.CTkFrame(tab_activities, fg_color="transparent")
         add_type_row.pack(fill="x", padx=4, pady=(8, 4))
         ctk.CTkLabel(add_type_row, text="New activity type", text_color=SUBTLE_TEXT_COLOR).pack(
@@ -2360,6 +2983,8 @@ class AdminApp(ctk.CTk):
         self._manage_list_inner = ctk.CTkScrollableFrame(tab_activities, fg_color="transparent")
         self._manage_list_inner.pack(fill="both", expand=True, padx=4, pady=(0, 12))
         self._refresh_manage_activities_list()
+
+        self._load_lap_times_into_ui()
 
     def _get_config(self) -> Dict[str, Any]:
         return self._collect_config()
@@ -2506,25 +3131,23 @@ class AdminApp(ctk.CTk):
         themed_message(self, "Saved", path, kind="success")
 
     def _export_html(self) -> None:
-        cfg = self._collect_config()
-        out_path = os.path.join(app_directory(), HTML_EXPORT_NAME)
-        out_dir = os.path.dirname(out_path)
+        self._cancel_lap_persist_timer()
         try:
-            map_name = ensure_export_assets(out_dir, app_directory())
-            map_path = os.path.join(app_directory(), map_name)
-            mw, mh = _map_image_pixel_size(map_path)
-            html = build_event_status_html(cfg, map_image_name=map_name, map_image_width=mw, map_image_height=mh)
-            with open(out_path, "w", encoding="utf-8") as f:
-                f.write(html)
-        except OSError as e:
-            themed_message(self, "Export failed", str(e), kind="error")
+            save_lap_times_list(self._collect_lap_rows_from_ui())
+        except OSError:
+            pass
+        ok, detail = self._export_event_status_html_files()
+        if not ok:
+            themed_message(self, "Export failed", detail, kind="error")
             return
+        out_path = os.path.join(app_directory(), HTML_EXPORT_NAME)
         themed_message(
             self,
             "Exported",
             out_path,
             kind="success",
-            detail="Open this file in a browser. Live status uses the viewer's clock.",
+            detail="Open this file in a browser. Live status uses the viewer's clock."
+            + (f"\n\n{detail}" if detail else ""),
         )
 
     def _push_to_git(self) -> None:
@@ -2541,6 +3164,11 @@ class AdminApp(ctk.CTk):
         # Save config first so latest app edits are included.
         path = os.path.join(repo, CONFIG_NAME)
         cfg = self._collect_config()
+        self._cancel_lap_persist_timer()
+        try:
+            save_lap_times_list(self._collect_lap_rows_from_ui())
+        except OSError:
+            pass
         try:
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(cfg, f, indent=2)

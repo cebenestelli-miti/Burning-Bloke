@@ -226,6 +226,152 @@
       pointer-events: auto;
       cursor: pointer;
     }
+    .barn-popover {
+      position: absolute;
+      z-index: 6;
+      left: calc((25 / 767) * 100% + 6px);
+      top: calc((40 / 1024) * 100% + 6px);
+      right: auto;
+      bottom: auto;
+      max-width: 220px;
+      padding: 10px 12px 12px;
+      background: #fffef8;
+      border: 1px solid #e0c896;
+      border-radius: 10px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+      font-size: 0.88rem;
+      line-height: 1.35;
+      color: #3e2723;
+      pointer-events: auto;
+      text-align: left;
+    }
+    .barn-popover__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #f0e0c0;
+    }
+    .barn-popover__head strong {
+      font-size: 0.95rem;
+      color: #5d4037;
+    }
+    .barn-popover__close {
+      border: none;
+      background: transparent;
+      color: #795548;
+      font-size: 1.35rem;
+      line-height: 1;
+      padding: 0 4px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .barn-popover__close:hover {
+      background: rgba(121,85,72,0.12);
+      color: #3e2723;
+    }
+    .barn-popover__list {
+      margin: 0;
+      padding-left: 1.25em;
+      list-style: disc;
+      list-style-position: outside;
+    }
+    .barn-popover__list li {
+      margin: 0.25em 0;
+      display: list-item;
+    }
+    .lap-times-popover {
+      position: absolute;
+      z-index: 6;
+      top: 50%;
+      right: 10px;
+      bottom: auto;
+      transform: translateY(-50%);
+      width: 148px;
+      max-width: 42%;
+      max-height: calc(100% - 20px);
+      height: auto;
+      display: flex;
+      flex-direction: column;
+      padding: 8px 10px 10px;
+      background: rgba(255, 253, 250, 0.97);
+      border: 1px solid #b0bec5;
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+      font-size: 0.78rem;
+      line-height: 1.25;
+      color: #263238;
+      pointer-events: auto;
+      text-align: left;
+      overflow: hidden;
+    }
+    .lap-times-popover[hidden] {
+      display: none !important;
+    }
+    .lap-times-popover__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      flex-shrink: 0;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #cfd8dc;
+    }
+    .lap-times-popover__head strong {
+      font-size: 0.82rem;
+      color: #37474f;
+    }
+    .lap-times-popover__close {
+      border: none;
+      background: transparent;
+      color: #546e7a;
+      font-size: 1.25rem;
+      line-height: 1;
+      padding: 0 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .lap-times-popover__close:hover {
+      background: rgba(84,110,122,0.12);
+    }
+    .lap-times-popover__body {
+      flex: 0 1 auto;
+      overflow-y: auto;
+      min-height: 0;
+      max-height: min(55vh, 360px);
+    }
+    .lap-times-popover__row {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 4px 0;
+      border-bottom: 1px solid #eceff1;
+    }
+    .lap-times-popover__row:last-child {
+      border-bottom: none;
+    }
+    .lap-times-popover__name {
+      font-weight: 700;
+      max-width: 52%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .lap-times-popover__lap {
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      flex: 1;
+      min-width: 0;
+      word-break: break-all;
+    }
+    .lap-times-popover__empty {
+      color: #78909c;
+      font-style: italic;
+      padding: 6px 0;
+    }
     .map-hint {
       text-align: center;
       color: #48606f;
@@ -313,34 +459,52 @@
     <img src="Map/BB map3.png" width="1536" height="2048" alt="Burning Bloke site map"/>
     <div id="map-target" class="map-target" aria-hidden="true"></div>
     <svg viewBox="0 0 767 1024" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <a href="#the-barn" aria-label="The Barn"><rect id="zone-the-barn" x="25" y="40" width="275" height="185" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#the-barn" aria-label="The Barn"><rect id="zone-the-barn" x="25" y="40" width="220" height="185" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#fire-top" aria-label="Fire Top"><rect id="zone-fire-top" x="178" y="220" width="205" height="145" rx="16" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#sauna" aria-label="Sauna"><ellipse id="zone-sauna" cx="124" cy="648" rx="72" ry="58" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#watch-tower" aria-label="Watch Tower"><rect id="zone-watch-tower" x="514" y="472" width="170" height="170" rx="14" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#race-track" aria-label="Race Track"><polygon id="zone-race-track" points="405,150 750,150 750,700 465,700 405,640" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#dam-forest" aria-label="Dam Forest"><rect id="zone-dam-forest" x="406" y="792" width="155" height="208" rx="26" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#bayside" aria-label="Bayside"><rect id="zone-bayside" x="158" y="740" width="552" height="225" rx="65" fill="rgba(255,255,255,0.001)"/></a>
-      <a href="#touch-football" aria-label="Touch Football"><ellipse id="zone-touch-football" cx="380" cy="400" rx="70" ry="70" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#shooting" aria-label="Shooting"><ellipse id="zone-shooting" cx="210" cy="720" rx="72" ry="62" fill="rgba(255,255,255,0.001)"/></a>
       <a href="#fire-bottom" aria-label="Fire Bottom"><ellipse id="zone-fire-bottom" cx="268" cy="654" rx="52" ry="46" fill="rgba(255,255,255,0.001)"/></a>
+      <a href="#watch-tower" aria-label="Watch Tower"><rect id="zone-watch-tower" x="450" y="436" width="164" height="164" rx="14" fill="rgba(255,255,255,0.001)"/></a>
     </svg>
+    <div id="barn-popover" class="barn-popover" hidden role="dialog" aria-modal="true" aria-labelledby="barn-popover-title">
+      <div class="barn-popover__head">
+        <strong id="barn-popover-title">The Barn</strong>
+        <button type="button" class="barn-popover__close" aria-label="Close">&times;</button>
+      </div>
+      <ul class="barn-popover__list">
+        <li>Toilets</li>
+        <li>Shower</li>
+        <li>Kitchen</li>
+        <li>Movies</li>
+      </ul>
+    </div>
+    <div id="lap-times-popover" class="lap-times-popover" hidden role="dialog" aria-modal="true" aria-labelledby="lap-times-popover-title">
+      <div class="lap-times-popover__head">
+        <strong id="lap-times-popover-title">Lap times</strong>
+        <button type="button" class="lap-times-popover__close" aria-label="Close">&times;</button>
+      </div>
+      <div id="lap-times-popover-body" class="lap-times-popover__body"></div>
+    </div>
   </div>
   <p id="map-status" class="map-hint">Click schedule/location links to target the map.</p>
-  <p id="map-generated" class="map-hint map-hint--generated">HTML generated 18 Apr 2026, 11:11 AM (E. Australia Standard Time)</p>
+  <p id="map-generated" class="map-hint map-hint--generated">HTML generated 18 Apr 2026, 01:13 PM (E. Australia Standard Time)</p>
 </div>
 
 <script>
-const schedule = [{"dateIso": "2026-05-01", "dayLabel": "Friday 01 May", "className": "sat", "blocks": [{"start": "1900", "end": "2359", "activity": "Movies & Poker (Optional - BYO BBQ food, let us know)", "location_g1": "The Barn", "location_g2": "The Barn"}]}, {"dateIso": "2026-05-02", "dayLabel": "Saturday 02 May", "className": "sun", "blocks": [{"start": "0730", "end": "0815", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0900", "end": "1100", "activity": "Swimming & Kayaking", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "1200", "end": "1230", "activity": "Lunch, Camp Setup", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1700", "activity": "Group 1 - Shooting\nGroup 2 - Rally Driving", "location_g1": "Shooting", "location_g2": "Watch Tower"}, {"start": "1700", "end": "1830", "activity": "Group 1 - Sauna & Icebath\nGroup 2 - Whatever you like", "location_g1": "Sauna", "location_g2": ""}, {"start": "1830", "end": "2359", "activity": "Dinner, Campfire & Drinks", "location_g1": "Fire Top", "location_g2": "Fire Top"}]}, {"dateIso": "2026-05-03", "dayLabel": "Sunday 03 May", "className": "mon", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1000", "end": "1100", "activity": "Touch Football", "location_g1": "Touch Football", "location_g2": "Touch Football"}, {"start": "1100", "end": "1300", "activity": "Lunch", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "1830", "activity": "Group 1 - Games - Bocce, Finska\nGroup 2 - Sauna & Icebath", "location_g1": "Shooting", "location_g2": "Sauna"}, {"start": "1830", "end": "2200", "activity": "Dinner & Bloke Burning", "location_g1": "Fire Top", "location_g2": "Fire Top"}]}, {"dateIso": "2026-05-04", "dayLabel": "Monday 04 May", "className": "sat", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "0930", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "2359", "activity": "Time Capsule Burying", "location_g1": "", "location_g2": ""}]}];
+const schedule = [{"dateIso": "2026-05-01", "dayLabel": "Friday 01 May", "className": "sat", "blocks": [{"start": "1900", "end": "2359", "activity": "Movies & Poker (Optional - BYO BBQ food, let us know)", "location_g1": "The Barn", "location_g2": "The Barn"}]}, {"dateIso": "2026-05-02", "dayLabel": "Saturday 02 May", "className": "sun", "blocks": [{"start": "0730", "end": "0815", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0900", "end": "1100", "activity": "Swimming & Kayaking", "location_g1": "Bayside", "location_g2": "Bayside"}, {"start": "1200", "end": "1230", "activity": "Lunch, Camp Setup", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1700", "activity": "Group 1 - Shooting\nGroup 2 - Rally Driving", "location_g1": "Shooting", "location_g2": "Watch Tower"}, {"start": "1700", "end": "1830", "activity": "Group 1 - Sauna & Icebath\nGroup 2 - Whatever you like", "location_g1": "Sauna", "location_g2": ""}, {"start": "1830", "end": "2359", "activity": "Dinner, Campfire & Drinks", "location_g1": "Fire Top", "location_g2": "Fire Top"}]}, {"dateIso": "2026-05-03", "dayLabel": "Sunday 03 May", "className": "mon", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1000", "end": "1100", "activity": "Touch Football", "location_g1": "Touch Football", "location_g2": "Touch Football"}, {"start": "1100", "end": "1300", "activity": "Lunch", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "1300", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "1830", "activity": "Group 1 - Games - Bocce, Finska\nGroup 2 - Sauna & Icebath", "location_g1": "Shooting", "location_g2": "Sauna"}, {"start": "1830", "end": "2200", "activity": "Dinner & Bloke Burning", "location_g1": "Fire Bottom", "location_g2": "Fire Bottom"}]}, {"dateIso": "2026-05-04", "dayLabel": "Monday 04 May", "className": "sat", "blocks": [{"start": "0730", "end": "0830", "activity": "Morning Meditation Session", "location_g1": "Dam Forest", "location_g2": "Dam Forest"}, {"start": "0830", "end": "0930", "activity": "Breakfast & Coffee", "location_g1": "The Barn", "location_g2": "The Barn"}, {"start": "0930", "end": "1500", "activity": "Group 1 - Rally Driving\nGroup 2 - Shooting", "location_g1": "Watch Tower", "location_g2": "Shooting"}, {"start": "1500", "end": "2359", "activity": "Time Capsule Burying", "location_g1": "", "location_g2": ""}]}];
 const locationTypes = ["Bayside", "Dam Forest", "Fire Bottom", "Fire Top", "Sauna", "Shooting", "The Barn", "Touch Football", "Watch Tower"];
+const lapTimes = [];
 const mapTarget = document.getElementById("map-target");
 const mapStatus = document.getElementById("map-status");
 const TARGET_VISIBLE_MS = 5200;
 const targetOverrides = {
+  "the-barn": { xPct: 17.6, yPct: 17.5 },
   "fire-top": { xPct: 32.6, yPct: 27.0 },
   "fire-bottom": { xPct: 34.9, yPct: 63.9 },
   "watch-tower": { xPct: 68.8, yPct: 53.8 },
   "bayside": { xPct: 60.2, yPct: 71.8 },
-  "touch-football": { xPct: 64.8, yPct: 22.0 },
   "shooting": { xPct: 24.8, yPct: 70.0 },
   "sauna": { xPct: 16.2, yPct: 63.3 },
   "dam-forest": { xPct: 63.0, yPct: 86.0 }
@@ -356,10 +520,8 @@ function locationToId(name) {
     "fire-bottom": "fire-bottom",
     "sauna": "sauna",
     "watch tower": "watch-tower",
-    "race track": "race-track",
     "bayside": "bayside",
     "bay side": "bayside",
-    "touch football": "touch-football",
     "shooting": "shooting",
     "dam forest": "dam-forest"
   };
@@ -510,7 +672,9 @@ function buildLocationLinks() {
     b.type = "button";
     b.className = "map-link";
     b.textContent = loc;
-    b.addEventListener("click", () => focusMapLocation(id, loc));
+    b.addEventListener("click", () => {
+      focusMapLocation(id, loc);
+    });
     wrap.appendChild(b);
   });
 }
@@ -655,6 +819,154 @@ function focusMapLocation(id, label) {
   setTimeout(() => notifyParentScrollToMap(mapScrollEl, "titleAtTop"), 220);
 }
 
+function hideLapTimesPopover() {
+  const el = document.getElementById("lap-times-popover");
+  if (el) el.hidden = true;
+  if (window._lapPopoverOutside) {
+    document.removeEventListener("click", window._lapPopoverOutside, true);
+    window._lapPopoverOutside = null;
+  }
+  notifyParentHeight();
+}
+
+function lapTimeSortKey(raw) {
+  const s = (raw == null ? "" : String(raw)).trim();
+  if (!s) return Number.POSITIVE_INFINITY;
+  const colon = s.match(/^(\d+):(\d+(?:\.\d+)?)$/);
+  if (colon) {
+    return parseInt(colon[1], 10) * 60 + parseFloat(colon[2]);
+  }
+  const num = parseFloat(s.replace(/,/g, "."));
+  if (!Number.isNaN(num)) return num;
+  return Number.POSITIVE_INFINITY;
+}
+
+function lapStrOf(r) {
+  return r && r.lap != null ? String(r.lap) : r && r.lap_time != null ? String(r.lap_time) : "";
+}
+
+/** Popover display: omit leading 0: when minutes are zero (e.g. 0:58 → 58). */
+function formatLapForPopoverDisplay(raw) {
+  const s = (raw == null ? "" : String(raw)).trim();
+  if (!s) return "";
+  const colon = s.match(/^(\d+):(\d+(?:\.\d+)?)$/);
+  if (colon) {
+    const m = parseInt(colon[1], 10);
+    const sec = colon[2];
+    if (m === 0) return sec;
+    return `${m}:${sec}`;
+  }
+  return s;
+}
+
+function renderLapTimesPopoverBody() {
+  const body = document.getElementById("lap-times-popover-body");
+  if (!body) return;
+  const rows = Array.isArray(lapTimes) ? lapTimes.slice() : [];
+  if (!rows.length) {
+    body.innerHTML = '<p class="lap-times-popover__empty">No laps yet.</p>';
+    return;
+  }
+  rows.sort((a, b) => {
+    const ka = lapTimeSortKey(lapStrOf(a));
+    const kb = lapTimeSortKey(lapStrOf(b));
+    if (ka !== kb) return ka - kb;
+    const na = a && a.name != null ? String(a.name) : "";
+    const nb = b && b.name != null ? String(b.name) : "";
+    return na.localeCompare(nb);
+  });
+  body.innerHTML = rows
+    .map((r) => {
+      const n = r && r.name != null ? String(r.name) : "";
+      const t = lapStrOf(r);
+      const tDisp = formatLapForPopoverDisplay(t);
+      const ne = n.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+      const te = tDisp.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
+      return `<div class="lap-times-popover__row"><span class="lap-times-popover__name">${ne}</span><span class="lap-times-popover__lap">${te}</span></div>`;
+    })
+    .join("");
+}
+
+function showLapTimesPopover() {
+  hideLapTimesPopover();
+  hideBarnPopover();
+  const el = document.getElementById("lap-times-popover");
+  if (!el) return;
+  renderLapTimesPopoverBody();
+  el.hidden = false;
+  notifyParentHeight();
+  window._lapPopoverOutside = function (ev) {
+    if (el.contains(ev.target)) return;
+    hideLapTimesPopover();
+  };
+  setTimeout(function () {
+    document.addEventListener("click", window._lapPopoverOutside, true);
+  }, 0);
+}
+
+function hideBarnPopover() {
+  const el = document.getElementById("barn-popover");
+  if (el) el.hidden = true;
+  if (window._barnPopoverOutside) {
+    document.removeEventListener("click", window._barnPopoverOutside, true);
+    window._barnPopoverOutside = null;
+  }
+  notifyParentHeight();
+}
+
+function showBarnPopover() {
+  hideLapTimesPopover();
+  hideBarnPopover();
+  const el = document.getElementById("barn-popover");
+  if (!el) return;
+  el.hidden = false;
+  notifyParentHeight();
+  window._barnPopoverOutside = function (ev) {
+    if (el.contains(ev.target)) return;
+    hideBarnPopover();
+  };
+  setTimeout(function () {
+    document.addEventListener("click", window._barnPopoverOutside, true);
+  }, 0);
+}
+
+function wireBarnPopoverUi() {
+  const btn = document.querySelector("#barn-popover .barn-popover__close");
+  if (btn && !btn.dataset.wired) {
+    btn.dataset.wired = "1";
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      hideBarnPopover();
+    });
+  }
+}
+
+function wireLapTimesPopoverUi() {
+  const btn = document.querySelector("#lap-times-popover .lap-times-popover__close");
+  if (btn && !btn.dataset.wired) {
+    btn.dataset.wired = "1";
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      hideLapTimesPopover();
+    });
+  }
+}
+
+function wireMapPopoverEscape() {
+  if (window._mapPopoverEscWired) return;
+  window._mapPopoverEscWired = true;
+  document.addEventListener(
+    "keydown",
+    function (ev) {
+      if (ev.key !== "Escape") return;
+      hideBarnPopover();
+    },
+    true
+  );
+}
+
 function bindMapClicks() {
   document.querySelectorAll("#map-wrap svg a").forEach((anchor) => {
     anchor.addEventListener("click", (event) => {
@@ -663,6 +975,8 @@ function bindMapClicks() {
       if (!href.startsWith("#")) return;
       const id = href.slice(1);
       const label = (anchor.getAttribute("aria-label") || id).trim();
+      if (id === "the-barn") showBarnPopover();
+      if (id === "watch-tower") showLapTimesPopover();
       focusMapLocation(id, label);
     });
   });
@@ -702,6 +1016,9 @@ function bindHeightObservers() {
 
 buildSchedule();
 buildLocationLinks();
+wireBarnPopoverUi();
+wireLapTimesPopoverUi();
+wireMapPopoverEscape();
 bindMapClicks();
 bindHeightObservers();
 updateDisplay();
