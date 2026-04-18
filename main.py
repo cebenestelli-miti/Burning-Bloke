@@ -71,8 +71,6 @@ DEFAULT_LOCATION_TYPES = [
     "Shooting",
 ]
 
-PROTECTED_LOCATION_TYPES: frozenset[str] = frozenset(DEFAULT_LOCATION_TYPES)
-
 CONFIG_NAME = "config.json"
 HTML_EXPORT_NAME = "event_status.html"
 ICON_ICO = "app_icon.ico"
@@ -998,12 +996,13 @@ const targetOverrides = {{
 }};
 
 function locationToId(name) {{
-  const s = (name || "").trim().toLowerCase();
+  const s = (name || "").trim().toLowerCase().replace(/\\s+/g, " ");
   const map = {{
     "the barn": "the-barn",
     "fire": "fire-top",
     "fire top": "fire-top",
     "fire bottom": "fire-bottom",
+    "fire-bottom": "fire-bottom",
     "sauna": "sauna",
     "watch tower": "watch-tower",
     "race track": "race-track",
@@ -2241,47 +2240,6 @@ class AdminApp(ctk.CTk):
         self._refresh_manage_activities_list()
         self.refresh_all_activity_combos()
 
-    def _refresh_manage_locations_list(self) -> None:
-        for w in self._manage_locations_inner.winfo_children():
-            w.destroy()
-        for name in sort_activity_types(self._location_types):
-            row = ctk.CTkFrame(self._manage_locations_inner)
-            row.pack(fill="x", pady=4)
-            ctk.CTkLabel(row, text=name, anchor="w").pack(side="left", fill="x", expand=True, padx=8, pady=6)
-            if name in PROTECTED_LOCATION_TYPES:
-                ctk.CTkLabel(row, text="(protected)", text_color=SUBTLE_TEXT_COLOR).pack(
-                    side="right", padx=8, pady=6
-                )
-            else:
-                ctk.CTkButton(
-                    row,
-                    text="✕",
-                    width=36,
-                    command=lambda n=name: self._remove_location_type(n),
-                ).pack(side="right", padx=6, pady=4)
-
-    def _add_location_type(self) -> None:
-        name = self._new_location_entry.get().strip()
-        if not name:
-            return
-        if name in self._location_types:
-            themed_message(self, "Duplicate", "That location is already in the list.", kind="info")
-            return
-        self._location_types.append(name)
-        self._location_types = sort_activity_types(self._location_types)
-        self._new_location_entry.delete(0, "end")
-        self._refresh_manage_locations_list()
-        self.refresh_all_location_combos()
-
-    def _remove_location_type(self, name: str) -> None:
-        if name in PROTECTED_LOCATION_TYPES:
-            return
-        if name not in self._location_types:
-            return
-        self._location_types.remove(name)
-        self._refresh_manage_locations_list()
-        self.refresh_all_location_combos()
-
     def _build_ui(self) -> None:
         save_bar = ctk.CTkFrame(self, fg_color="transparent")
         save_bar.pack(side="bottom", fill="x", padx=20, pady=(8, 16))
@@ -2403,23 +2361,6 @@ class AdminApp(ctk.CTk):
         self._manage_list_inner.pack(fill="both", expand=True, padx=4, pady=(0, 12))
         self._refresh_manage_activities_list()
 
-        ctk.CTkFrame(tab_activities, height=1, fg_color=("gray70", "gray35")).pack(fill="x", padx=4, pady=(2, 10))
-
-        ctk.CTkLabel(
-            tab_activities,
-            text="Location types",
-            font=ctk.CTkFont(size=14, weight="bold"),
-        ).pack(anchor="w", padx=4, pady=(0, 6))
-        loc_row = ctk.CTkFrame(tab_activities, fg_color="transparent")
-        loc_row.pack(fill="x", padx=4, pady=(0, 8))
-        self._new_location_entry = ctk.CTkEntry(loc_row, width=320)
-        self._new_location_entry.pack(side="left", padx=(0, 10))
-        ctk.CTkButton(loc_row, text="Add Location Type", width=150, command=self._add_location_type).pack(side="left")
-
-        self._manage_locations_inner = ctk.CTkScrollableFrame(tab_activities, fg_color="transparent", height=170)
-        self._manage_locations_inner.pack(fill="x", padx=4, pady=(0, 12))
-        self._refresh_manage_locations_list()
-
     def _get_config(self) -> Dict[str, Any]:
         return self._collect_config()
 
@@ -2472,7 +2413,6 @@ class AdminApp(ctk.CTk):
             self.end_cal.set_date(today)
             self._startup_days_from_file = {}
             self._refresh_manage_activities_list()
-            self._refresh_manage_locations_list()
             self.after_idle(self._finish_heavy_startup)
             return
         try:
@@ -2485,7 +2425,6 @@ class AdminApp(ctk.CTk):
             self.end_cal.set_date(today)
             self._startup_days_from_file = {}
             self._refresh_manage_activities_list()
-            self._refresh_manage_locations_list()
             self.after_idle(self._finish_heavy_startup)
             return
 
@@ -2506,7 +2445,6 @@ class AdminApp(ctk.CTk):
 
         self._startup_days_from_file = data.get("days") or {}
         self._refresh_manage_activities_list()
-        self._refresh_manage_locations_list()
         self.after_idle(self._finish_heavy_startup)
 
     def _finish_heavy_startup(self) -> None:

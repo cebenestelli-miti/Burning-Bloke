@@ -326,7 +326,7 @@
     </svg>
   </div>
   <p id="map-status" class="map-hint">Click schedule/location links to target the map.</p>
-  <p id="map-generated" class="map-hint map-hint--generated">HTML generated 18 Apr 2026, 10:42 AM (E. Australia Standard Time)</p>
+  <p id="map-generated" class="map-hint map-hint--generated">HTML generated 18 Apr 2026, 11:11 AM (E. Australia Standard Time)</p>
 </div>
 
 <script>
@@ -347,12 +347,13 @@ const targetOverrides = {
 };
 
 function locationToId(name) {
-  const s = (name || "").trim().toLowerCase();
+  const s = (name || "").trim().toLowerCase().replace(/\s+/g, " ");
   const map = {
     "the barn": "the-barn",
     "fire": "fire-top",
     "fire top": "fire-top",
     "fire bottom": "fire-bottom",
+    "fire-bottom": "fire-bottom",
     "sauna": "sauna",
     "watch tower": "watch-tower",
     "race track": "race-track",
