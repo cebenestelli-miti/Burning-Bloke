@@ -1579,16 +1579,22 @@ function lapStrOf(r) {{
   return r && r.lap != null ? String(r.lap) : r && r.lap_time != null ? String(r.lap_time) : "";
 }}
 
-/** Popover display: omit leading 0: when minutes are zero (e.g. 0:58 → 58). */
+/** Popover display: "m" only when minutes > 0; "sec" for the seconds part or plain numeric laps. */
 function formatLapForPopoverDisplay(raw) {{
   const s = (raw == null ? "" : String(raw)).trim();
   if (!s) return "";
   const colon = s.match(/^(\\d+):(\\d+(?:\\.\\d+)?)$/);
   if (colon) {{
     const m = parseInt(colon[1], 10);
-    const sec = colon[2];
-    if (m === 0) return sec;
-    return `${{m}}:${{sec}}`;
+    const secPart = colon[2];
+    if (m > 0) {{
+      return `${{m}}m ${{secPart}}sec`;
+    }}
+    return `${{secPart}}sec`;
+  }}
+  const num = parseFloat(s.replace(/,/g, "."));
+  if (!Number.isNaN(num)) {{
+    return `${{s}}sec`;
   }}
   return s;
 }}
