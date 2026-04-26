@@ -1862,6 +1862,7 @@ class DisplayWindow(tk.Toplevel):
     DISPLAY_SCHEDULE_PHASE_S = 15.0
     DISPLAY_ACTIVITY_IMAGE_PHASE_S = 10.0
     SCHEDULE_CHECK_MS = 5000
+    PREVIEW_ACTIVITY_STEP_MS = 3000
     CLOCK_FONT = DISPLAY_CLOCK_FONT
     CLOCK_PAD = 30
     QR_PAD = 30
@@ -1871,11 +1872,15 @@ class DisplayWindow(tk.Toplevel):
         master: tk.Misc,
         get_config: Callable[[], Dict[str, Any]],
         on_close: Optional[Callable[[], None]] = None,
+        schedule_phase_s: Optional[float] = None,
+        activity_image_phase_s: Optional[float] = None,
+        title: str = "Display",
+        preview_mode: bool = False,
     ):
         super().__init__(master)
         self._get_config = get_config
         self._on_close = on_close
-        self.title("Display")
+        self.title(title)
         self.configure(bg="black")
         self.attributes("-fullscreen", True)
         self.overrideredirect(False)
@@ -1922,6 +1927,15 @@ class DisplayWindow(tk.Toplevel):
         self._tick_after: Optional[str] = None
         self._schedule_after: Optional[str] = None
         self._clock_after: Optional[str] = None
+        self._schedule_phase_s = max(0.5, float(schedule_phase_s or self.DISPLAY_SCHEDULE_PHASE_S))
+        self._activity_image_phase_s = max(
+            0.5, float(activity_image_phase_s or self.DISPLAY_ACTIVITY_IMAGE_PHASE_S)
+        )
+        self._preview_mode = bool(preview_mode)
+        self._schedule_check_ms = self.SCHEDULE_CHECK_MS
+        self._preview_anchor_mono = time.monotonic()
+        if self._preview_mode:
+            self._schedule_check_ms = self.PREVIEW_ACTIVITY_STEP_MS
 
         self._canvas.bind("<Configure>", self._on_canvas_configure)
 
@@ -1929,7 +1943,7 @@ class DisplayWindow(tk.Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.close)
 
         self._refresh_schedule_bucket()
-        self._schedule_after = self.after(self.SCHEDULE_CHECK_MS, self._schedule_check_loop)
+        self._schedule_after = self.after(self._schedule_check_ms, self._schedule_check_loop)
         self._clock_tick()
         self._display_tick()
 
@@ -2020,7 +2034,7 @@ class DisplayWindow(tk.Toplevel):
 
     def _schedule_check_loop(self):
         self._refresh_schedule_bucket()
-        self._schedule_after = self.after(self.SCHEDULE_CHECK_MS, self._schedule_check_loop)
+        self._schedule_after = self.after(self._schedule_check_ms, self._schedule_check_loop)
 
     def _refresh_schedule_bucket(self):
         cfg = self._get_config()
@@ -2036,11 +2050,67 @@ class DisplayWindow(tk.Toplevel):
         except ValueError:
             return ("bad_config",)
 
-        if not start_d or not end_d or today < start_d or today > end_d:
+        if not self._preview_mode and (not start_d or not end_d or today < start_d or today > end_d):
             return ("out_of_range", today.isoformat())
+        days = cfg.get("days") or {}
 
         day_key = today.isoformat()
-        days = cfg.get("days") or {}
+        if self._preview_mode:
+            preview_rows: List[Tuple[str, date, int, int, str, str, str]] = []
+            for dk in sorted(k for k in days.keys() if isinstance(k, str) and k.strip()):
+                day_obj = days.get(dk) or {}
+                day_acts = normalize_day_activities(list(day_obj.get("activities") or []))
+                try:
+                    d_date = date.fromisoformat(dk)
+                except ValueError:
+                    d_date = today
+                for a in day_acts:
+                    st = parse_hhmm(a.get("start", ""))
+                    et = parse_hhmm(a.get("end", ""))
+                    if not st or not et:
+                        continue
+                    ssec = time_tuple_to_seconds(st[0], st[1])
+                    esec = time_tuple_to_seconds(et[0], et[1])
+                    if esec <= ssec:
+                        continue
+                    g1 = (a.get("name_g1") or "").strip()
+                    g2 = (a.get("name_g2") or "").strip()
+                    if not g1 and not g2:
+                        continue
+                    img = (a.get("image") or "").strip()
+                    preview_rows.append((dk, d_date, ssec, esec, g1, g2, img))
+
+            if not preview_rows:
+                return ("no_valid_activities", day_key)
+
+            activity_cycle_s = max(0.5, self._schedule_phase_s + self._activity_image_phase_s)
+            preview_idx = int((time.monotonic() - self._preview_anchor_mono) // activity_cycle_s)
+            pick = preview_rows[preview_idx % len(preview_rows)]
+            day_key, day_date, ssec, esec, cg1, cg2, img = pick
+            day_obj = days.get(day_key) or {}
+            day_acts = normalize_day_activities(list(day_obj.get("activities") or []))
+            schedule_specs: List[Tuple[str, List[str]]] = []
+            for a in day_acts:
+                st = parse_hhmm(a.get("start", ""))
+                et = parse_hhmm(a.get("end", ""))
+                if not st or not et:
+                    continue
+                ss = time_tuple_to_seconds(st[0], st[1])
+                ee = time_tuple_to_seconds(et[0], et[1])
+                if ee <= ss:
+                    continue
+                gg1 = (a.get("name_g1") or "").strip()
+                gg2 = (a.get("name_g2") or "").strip()
+                if not gg1 and not gg2:
+                    continue
+                row = schedule_slot_spec(st[0], st[1], et[0], et[1], gg1, gg2)
+                if row:
+                    schedule_specs.append(row)
+            name = activity_label_for_bucket(cg1, cg2)
+            return ("in_activity", day_key, day_date.strftime("%A"), schedule_specs, name, img, ssec, esec)
+        else:
+            day_date = today
+
         day = days.get(day_key) or {}
         activities = normalize_day_activities(list(day.get("activities") or []))
 
@@ -2072,6 +2142,9 @@ class DisplayWindow(tk.Toplevel):
         first_s = parsed[0][0]
         last_e = parsed[-1][1]
 
+        if self._preview_mode:
+            now_sec = first_s
+
         if now_sec < first_s:
             return ("before_day", day_key)
         if now_sec >= last_e:
@@ -2079,7 +2152,7 @@ class DisplayWindow(tk.Toplevel):
 
         for ssec, esec, cg1, cg2, img in parsed:
             if ssec <= now_sec < esec:
-                day_label = today.strftime("%A")
+                day_label = day_date.strftime("%A")
                 schedule_specs: List[Tuple[str, List[str]]] = []
                 for ss, ee, gg1, gg2, _i in parsed:
                     sh, sm = ss // 3600, (ss % 3600) // 60
@@ -2090,7 +2163,7 @@ class DisplayWindow(tk.Toplevel):
                 name = activity_label_for_bucket(cg1, cg2)
                 return ("in_activity", day_key, day_label, schedule_specs, name, img, ssec, esec)
 
-        day_label = today.strftime("%A")
+        day_label = day_date.strftime("%A")
         schedule_specs = []
         for ss, ee, gg1, gg2, _i in parsed:
             sh, sm = ss // 3600, (ss % 3600) // 60
@@ -2290,9 +2363,9 @@ class DisplayWindow(tk.Toplevel):
                 self._alt_anchor_mono = time.monotonic()
 
             elapsed = time.monotonic() - self._alt_anchor_mono
-            cycle = self.DISPLAY_SCHEDULE_PHASE_S + self.DISPLAY_ACTIVITY_IMAGE_PHASE_S
+            cycle = self._schedule_phase_s + self._activity_image_phase_s
             phase = elapsed % cycle
-            if phase < self.DISPLAY_SCHEDULE_PHASE_S:
+            if phase < self._schedule_phase_s:
                 show_schedule_background(day_label, specs)
             else:
                 fn = act_img
@@ -3006,6 +3079,9 @@ class AdminApp(ctk.CTk):
         ctk.CTkButton(btns, text="Start Display", width=140, command=self._start_display).pack(
             side="left", padx=(0, 10)
         )
+        ctk.CTkButton(btns, text="Preview Display (3s)", width=170, command=self._preview_display).pack(
+            side="left", padx=(0, 10)
+        )
         ctk.CTkButton(btns, text="Stop Display", width=120, command=self._stop_display).pack(
             side="left"
         )
@@ -3317,6 +3393,27 @@ class AdminApp(ctk.CTk):
             themed_message(self, "Git push failed", str(e), kind="error")
 
     def _start_display(self):
+        self._open_display_window(
+            schedule_phase_s=DisplayWindow.DISPLAY_SCHEDULE_PHASE_S,
+            activity_image_phase_s=DisplayWindow.DISPLAY_ACTIVITY_IMAGE_PHASE_S,
+            title="Display",
+        )
+
+    def _preview_display(self):
+        self._open_display_window(
+            schedule_phase_s=3.0,
+            activity_image_phase_s=3.0,
+            title="Display Preview (3s slides)",
+            preview_mode=True,
+        )
+
+    def _open_display_window(
+        self,
+        schedule_phase_s: float,
+        activity_image_phase_s: float,
+        title: str,
+        preview_mode: bool = False,
+    ) -> None:
         if self._display_win is not None:
             try:
                 if self._display_win.winfo_exists():
@@ -3329,7 +3426,15 @@ class AdminApp(ctk.CTk):
         def clear_ref():
             self._display_win = None
 
-        self._display_win = DisplayWindow(self, self._get_config, on_close=clear_ref)
+        self._display_win = DisplayWindow(
+            self,
+            self._get_config,
+            on_close=clear_ref,
+            schedule_phase_s=schedule_phase_s,
+            activity_image_phase_s=activity_image_phase_s,
+            title=title,
+            preview_mode=preview_mode,
+        )
 
     def _stop_display(self):
         if self._display_win is not None:
